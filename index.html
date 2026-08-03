@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jan-Suraksha | Transparent Citizen Grievance Management System</title>
+  <!-- Google Fonts & FontAwesome / Lucide CDN -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app" class="app-container">
+    <!-- Top Global Banner & Live Ticker -->
+    <div class="top-announcement">
+      <div class="announcement-content">
+        <span class="pulse-badge"><i class="fa-solid fa-signal"></i> REAL-TIME DISPATCH</span>
+        <span class="ticker-text">Smart Panchayath Governance Active • AI Duplicate Merging Enabled • 100% Public Transparency</span>
+      </div>
+      <div class="quick-stats">
+        <span><i class="fa-solid fa-users"></i> 14,250 Citizens</span>
+        <span><i class="fa-solid fa-check-circle"></i> 94.2% Resolution Rate</span>
+      </div>
+    </div>
+
+    <!-- Main Navigation Header -->
+    <header class="main-header">
+      <div class="header-brand">
+        <div class="logo-icon">
+          <i class="fa-solid fa-building-columns"></i>
+        </div>
+        <div class="logo-text">
+          <h1>JAN-SURAKSHA <span class="badge-v2">v2.4</span></h1>
+          <p>Transparent Citizen Grievance & Smart Panchayath System</p>
+        </div>
+      </div>
+
+      <!-- Role Switcher Control Bar -->
+      <div class="role-switcher-container">
+        <span class="role-label"><i class="fa-solid fa-user-gear"></i> Active Role:</span>
+        <div class="role-buttons">
+          <button class="role-btn active" data-role="CITIZEN">
+            <i class="fa-solid fa-user"></i> Citizen
+          </button>
+          <button class="role-btn" data-role="WARD_MEMBER">
+            <i class="fa-solid fa-user-shield"></i> Ward Member
+          </button>
+          <button class="role-btn" data-role="PRESIDENT">
+            <i class="fa-solid fa-award"></i> President
+          </button>
+          <button class="role-btn" data-role="ADMIN">
+            <i class="fa-solid fa-sliders"></i> Admin
+          </button>
+        </div>
+      </div>
+
+      <!-- User Info & Action Center -->
+      <div class="header-actions">
+        <!-- Java OOP Inspector Button -->
+        <button id="btn-view-java" class="btn-secondary glow-btn" title="View Java OOP Code & Architecture">
+          <i class="fa-brands fa-java"></i> Java OOP Code
+        </button>
+
+        <!-- Notification Bell -->
+        <div class="notification-wrapper">
+          <button id="btn-notifications" class="icon-btn">
+            <i class="fa-solid fa-bell"></i>
+            <span id="notification-count" class="badge-count">3</span>
+          </button>
+          
+          <!-- Dropdown Drawer -->
+          <div id="notification-drawer" class="notification-drawer hidden">
+            <div class="drawer-header">
+              <h3><i class="fa-solid fa-bell"></i> Live System Notifications</h3>
+              <button id="btn-clear-notifications" class="text-btn">Clear all</button>
+            </div>
+            <div id="notification-list" class="notification-list">
+              <!-- Dynamically Populated -->
+            </div>
+          </div>
+        </div>
+
+        <div class="user-profile-card">
+          <img id="user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100" alt="Avatar" />
+          <div class="user-details">
+            <span id="user-display-name" class="user-name">Rajesh Kumar</span>
+            <span id="user-display-role" class="user-role-tag">Citizen • Ward 1</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Body -->
+    <main class="main-body">
+
+      <!-- ==================== 1. CITIZEN MODULE ==================== -->
+      <section id="module-citizen" class="portal-module active">
+        <!-- Citizen Hero Banner -->
+        <div class="portal-hero">
+          <div class="hero-text">
+            <h2>Welcome to Citizen Governance Portal</h2>
+            <p>File grievances, upload proof photos, track real-time resolution stages, and upvote neighborhood issues to prioritize public action.</p>
+          </div>
+          <div class="hero-cta">
+            <button id="btn-open-submit-modal" class="btn-primary-gradient">
+              <i class="fa-solid fa-plus-circle"></i> File New Grievance
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="filter-bar">
+          <div class="search-input-group">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="citizen-search" placeholder="Search grievances by title, category, or location..." />
+          </div>
+
+          <div class="filter-controls">
+            <select id="citizen-category-filter" class="form-select">
+              <option value="ALL">All Categories</option>
+              <option value="Road Damage">Road Damage</option>
+              <option value="Streetlight">Streetlight</option>
+              <option value="Water Supply">Water Supply</option>
+              <option value="Drainage">Drainage</option>
+              <option value="Garbage">Garbage</option>
+              <option value="Electricity">Electricity</option>
+              <option value="Sewage">Sewage</option>
+              <option value="Public Toilet">Public Toilet</option>
+              <option value="Tree Removal">Tree Removal</option>
+              <option value="Others">Others</option>
+            </select>
+
+            <select id="citizen-tab-filter" class="form-select">
+              <option value="PUBLIC">Public Feed (Community Upvote)</option>
+              <option value="MY_COMPLAINTS">My Submitted Grievances</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Complaint Feed Grid -->
+        <div id="citizen-complaints-grid" class="complaints-grid">
+          <!-- Dynamically Rendered Complaint Cards -->
+        </div>
+      </section>
+
+      <!-- ==================== 2. WARD MEMBER MODULE ==================== -->
+      <section id="module-ward-member" class="portal-module hidden">
+        <div class="module-header-banner ward-banner">
+          <div>
+            <h2><i class="fa-solid fa-user-shield"></i> Ward Member Review & Field Inspection Portal</h2>
+            <p>Review incoming ward grievances, conduct local physical assessments, approve or reject complaints, and append field inspection remarks.</p>
+          </div>
+          <div class="ward-badge">
+            <span class="label">Assigned Ward:</span>
+            <span class="ward-title"><i class="fa-solid fa-location-dot"></i> Ward 1 - Green Valley</span>
+          </div>
+        </div>
+
+        <div class="stats-overview-row">
+          <div class="stat-card yellow">
+            <div class="stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+            <div class="stat-info">
+              <span id="ward-pending-count" class="stat-num">0</span>
+              <span class="stat-label">Pending Review</span>
+            </div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="stat-info">
+              <span id="ward-approved-count" class="stat-num">0</span>
+              <span class="stat-label">Approved & Forwarded</span>
+            </div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-icon"><i class="fa-solid fa-circle-xmark"></i></div>
+            <div class="stat-info">
+              <span id="ward-rejected-count" class="stat-num">0</span>
+              <span class="stat-label">Rejected Grievances</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ward Complaints Table / Feed -->
+        <div class="glass-panel mt-4">
+          <div class="panel-header">
+            <h3><i class="fa-solid fa-clipboard-list"></i> Ward Grievance Assessment Queue</h3>
+          </div>
+          <div id="ward-complaints-list" class="ward-complaints-list">
+            <!-- Dynamically Rendered -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 3. PANCHAYATH PRESIDENT MODULE ==================== -->
+      <section id="module-president" class="portal-module hidden">
+        <div class="module-header-banner president-banner">
+          <div>
+            <h2><i class="fa-solid fa-award"></i> Panchayath Executive Dashboard</h2>
+            <p>Monitor all Panchayath Wards, review smart priority scores, assign municipal departments, and generate analytical compliance reports.</p>
+          </div>
+          <div class="header-action-btns">
+            <button id="btn-run-ai-merger" class="btn-ai">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Run AI Similarity Scanner
+            </button>
+            <button id="btn-generate-report" class="btn-primary">
+              <i class="fa-solid fa-file-export"></i> Export Official Report
+            </button>
+          </div>
+        </div>
+
+        <!-- Executive Metrics Row -->
+        <div class="stats-overview-row">
+          <div class="stat-card blue">
+            <div class="stat-icon"><i class="fa-solid fa-folder-open"></i></div>
+            <div class="stat-info">
+              <span id="pres-total-count" class="stat-num">0</span>
+              <span class="stat-label">Total Panchayath Issues</span>
+            </div>
+          </div>
+          <div class="stat-card purple">
+            <div class="stat-icon"><i class="fa-solid fa-fire"></i></div>
+            <div class="stat-info">
+              <span id="pres-critical-count" class="stat-num">0</span>
+              <span class="stat-label">High Priority / Upvoted</span>
+            </div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-icon"><i class="fa-solid fa-gears"></i></div>
+            <div class="stat-info">
+              <span id="pres-inprogress-count" class="stat-num">0</span>
+              <span class="stat-label">In Department Action</span>
+            </div>
+          </div>
+          <div class="stat-card teal">
+            <div class="stat-icon"><i class="fa-solid fa-layer-group"></i></div>
+            <div class="stat-info">
+              <span id="pres-merged-count" class="stat-num">0</span>
+              <span class="stat-label">AI Merged Duplicates</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- President Priority Matrix & Department Assignment Table -->
+        <div class="glass-panel mt-4">
+          <div class="panel-header flex-between">
+            <h3><i class="fa-solid fa-arrow-down-short-wide"></i> Smart Prioritized Complaints & Department Allocation</h3>
+            <span class="info-pill"><i class="fa-solid fa-bolt"></i> Ordered by Public Impact Score</span>
+          </div>
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Title & Category</th>
+                  <th>Ward</th>
+                  <th>Priority Score</th>
+                  <th>Community Upvotes</th>
+                  <th>Current Status</th>
+                  <th>Assigned Department</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="president-table-body">
+                <!-- Dynamically Rendered -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 4. ADMINISTRATOR MODULE ==================== -->
+      <section id="module-admin" class="portal-module hidden">
+        <div class="module-header-banner admin-banner">
+          <div>
+            <h2><i class="fa-solid fa-sliders"></i> System Administrator Control Hub</h2>
+            <p>Manage Panchayath users, wards, department routing, grievance categories, AI duplicate thresholds, and master audit metrics.</p>
+          </div>
+        </div>
+
+        <!-- Admin Control Grid -->
+        <div class="admin-grid">
+          <!-- User Management Panel -->
+          <div class="glass-panel">
+            <div class="panel-header">
+              <h3><i class="fa-solid fa-users-gear"></i> System User Management</h3>
+            </div>
+            <div class="panel-body">
+              <div id="admin-user-list" class="admin-list-box">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Ward & Department Config -->
+          <div class="glass-panel">
+            <div class="panel-header">
+              <h3><i class="fa-solid fa-network-wired"></i> Wards & Department Directory</h3>
+            </div>
+            <div class="panel-body">
+              <div id="admin-dept-list" class="admin-list-box">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Categories & AI Thresholds -->
+          <div class="glass-panel full-width">
+            <div class="panel-header">
+              <h3><i class="fa-solid fa-microchip"></i> AI Similarity Engine Settings & Category Configuration</h3>
+            </div>
+            <div class="panel-body ai-config-form">
+              <div class="config-row">
+                <label>Text Similarity Threshold (Jaccard Match %):</label>
+                <div class="range-container">
+                  <input type="range" id="ai-text-threshold" min="30" max="90" value="50" oninput="document.getElementById('text-thresh-val').innerText = this.value + '%'" />
+                  <span id="text-thresh-val" class="range-val">50%</span>
+                </div>
+              </div>
+              <div class="config-row">
+                <label>Geographic Proximity Radius (Meters):</label>
+                <div class="range-container">
+                  <input type="range" id="ai-geo-radius" min="100" max="2000" step="50" value="500" oninput="document.getElementById('geo-thresh-val').innerText = this.value + 'm'" />
+                  <span id="geo-thresh-val" class="range-val">500m</span>
+                </div>
+              </div>
+              <div class="categories-tag-cloud">
+                <span class="tag">Road Damage</span>
+                <span class="tag">Streetlight</span>
+                <span class="tag">Water Supply</span>
+                <span class="tag">Drainage</span>
+                <span class="tag">Garbage</span>
+                <span class="tag">Electricity</span>
+                <span class="tag">Sewage</span>
+                <span class="tag">Public Toilet</span>
+                <span class="tag">Tree Removal</span>
+                <span class="tag">Others</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ==================== MODALS ==================== -->
+
+    <!-- 1. SUBMIT GRIEVANCE MODAL -->
+    <div id="modal-submit" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-file-pen"></i> Submit Transparent Citizen Grievance</h3>
+          <button class="close-modal-btn">&times;</button>
+        </div>
+        <form id="form-submit-complaint" class="modal-body">
+          <div class="form-group">
+            <label>Grievance Title <span class="req">*</span></label>
+            <input type="text" id="input-title" required placeholder="e.g. Major Water Leakage on Temple Street" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Category <span class="req">*</span></label>
+              <select id="input-category" class="form-select" required>
+                <option value="Road Damage">Road Damage</option>
+                <option value="Streetlight">Streetlight</option>
+                <option value="Water Supply">Water Supply</option>
+                <option value="Drainage">Drainage</option>
+                <option value="Garbage">Garbage</option>
+                <option value="Electricity">Electricity</option>
+                <option value="Sewage">Sewage</option>
+                <option value="Public Toilet">Public Toilet</option>
+                <option value="Tree Removal">Tree Removal</option>
+                <option value="Others">Others</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Ward <span class="req">*</span></label>
+              <select id="input-ward" class="form-select" required>
+                <option value="W1">Ward 1 - Green Valley</option>
+                <option value="W2">Ward 2 - Lakeview</option>
+                <option value="W3">Ward 3 - Market Square</option>
+                <option value="W4">Ward 4 - Hill Top</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Exact Location / Landmark <span class="req">*</span></label>
+              <input type="text" id="input-location" required placeholder="e.g. Near Bus Stand Entrance" />
+            </div>
+
+            <div class="form-group">
+              <label>Urgency Level <span class="req">*</span></label>
+              <select id="input-urgency" class="form-select" required>
+                <option value="LOW">Low (Routine maintenance)</option>
+                <option value="MEDIUM" selected>Medium (Standard priority)</option>
+                <option value="HIGH">High (Needs immediate attention)</option>
+                <option value="CRITICAL">Critical (Hazardous/Emergency)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Detailed Description <span class="req">*</span></label>
+            <textarea id="input-description" rows="3" required placeholder="Provide exact details of the grievance to help authorities assess the issue..."></textarea>
+          </div>
+
+          <!-- Photo Upload Preview -->
+          <div class="form-group">
+            <label>Upload Photo Proof</label>
+            <div class="photo-upload-zone" id="photo-drop-zone">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>Click to select sample photo or upload photo proof</span>
+              <input type="file" id="input-photo" accept="image/*" class="hidden-file-input" />
+            </div>
+            <div id="photo-preview-container" class="photo-preview-container hidden">
+              <img id="photo-preview-img" src="" alt="Preview" />
+              <button type="button" id="btn-remove-photo" class="remove-photo-btn"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary close-modal-btn">Cancel</button>
+            <button type="submit" class="btn-primary"><i class="fa-solid fa-paper-plane"></i> Submit Grievance</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 2. LIVE STATUS TRACKING TIMELINE MODAL -->
+    <div id="modal-tracking" class="modal-overlay hidden">
+      <div class="modal-card max-w-xl">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-clock-rotate-left"></i> Live Real-Time Grievance Timeline</h3>
+          <button class="close-modal-btn">&times;</button>
+        </div>
+        <div class="modal-body" id="tracking-modal-body">
+          <!-- Dynamically populated timeline -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. AI COMPLAINT MERGING MODAL -->
+    <div id="modal-ai-merge" class="modal-overlay hidden">
+      <div class="modal-card max-w-2xl">
+        <div class="modal-header ai-modal-header">
+          <h3><i class="fa-solid fa-wand-magic-sparkles"></i> AI Intelligent Duplicate Detection & Consolidation</h3>
+          <button class="close-modal-btn">&times;</button>
+        </div>
+        <div class="modal-body" id="ai-merge-modal-body">
+          <!-- Dynamically populated AI results -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. JAVA OOP ARCHITECTURE CODE INSPECTOR MODAL -->
+    <div id="modal-java-code" class="modal-overlay hidden">
+      <div class="modal-card max-w-4xl">
+        <div class="modal-header java-modal-header">
+          <h3><i class="fa-brands fa-java"></i> Java Object-Oriented Architecture & Domain Models</h3>
+          <button class="close-modal-btn">&times;</button>
+        </div>
+        <div class="modal-body java-code-body">
+          <div class="java-tabs">
+            <button class="java-tab active" data-file="User.java">User.java (Abstract)</button>
+            <button class="java-tab" data-file="Complaint.java">Complaint.java</button>
+            <button class="java-tab" data-file="AIMergingEngine.java">AIMergingEngine.java</button>
+            <button class="java-tab" data-file="PriorityCalculationStrategy.java">Strategy.java</button>
+            <button class="java-tab" data-file="Main.java">Main.java</button>
+          </div>
+          <pre class="code-block"><code id="java-code-content">Loading Java Source...</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
