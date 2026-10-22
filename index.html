@@ -82,7 +82,24 @@
           </div>
         </div>
 
-        <div class="user-profile-card">
+        <!-- Login Button (shown when not logged in as citizen) -->
+        <button id="btn-citizen-login" class="btn-citizen-login" onclick="openUserLoginModal('login')">
+          <i class="fa-solid fa-right-to-bracket"></i> Login / Register
+        </button>
+
+        <!-- Citizen Profile (shown when logged in) -->
+        <div id="citizen-profile-card" class="citizen-profile-card hidden">
+          <div class="citizen-avatar-circle" id="citizen-avatar-circle">?</div>
+          <div class="user-details">
+            <span id="citizen-display-name" class="user-name">Guest</span>
+            <span id="citizen-display-email" class="user-role-tag">Not logged in</span>
+          </div>
+          <button class="citizen-logout-btn" onclick="logoutCitizen()" title="Logout">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+
+                <div class="user-profile-card">
           <img id="user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100" alt="Avatar" />
           <div class="user-details">
             <span id="user-display-name" class="user-name">Rajesh Kumar</span>
