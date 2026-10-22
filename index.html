@@ -565,6 +565,85 @@
       </div>
     </div>
 
+    <!-- 6. CITIZEN LOGIN / REGISTER MODAL -->
+    <div id="modal-user-login" class="modal-overlay hidden user-login-overlay">
+      <div class="modal-card user-login-card">
+
+        <!-- Tabs -->
+        <div class="user-login-tabs">
+          <button class="ulogin-tab active" id="tab-login" onclick="switchAuthTab('login')">
+            <i class="fa-solid fa-right-to-bracket"></i> Login
+          </button>
+          <button class="ulogin-tab" id="tab-register" onclick="switchAuthTab('register')">
+            <i class="fa-solid fa-user-plus"></i> Register
+          </button>
+          <button class="ulogin-close" onclick="closeUserLoginModal()">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <!-- LOGIN FORM -->
+        <form id="form-user-login" class="auth-form" autocomplete="off">
+          <div class="auth-hero">
+            <div class="auth-icon-circle login-icon">
+              <i class="fa-solid fa-user-lock"></i>
+            </div>
+            <h3>Welcome Back</h3>
+            <p>Login to post and track your grievances</p>
+          </div>
+          <div class="auth-field">
+            <label><i class="fa-solid fa-envelope"></i> Email Address</label>
+            <input type="email" id="login-email" placeholder="your@gmail.com" required />
+          </div>
+          <div class="auth-field">
+            <label><i class="fa-solid fa-lock"></i> Password</label>
+            <div class="auth-pw-wrap">
+              <input type="password" id="login-password" placeholder="Enter your password" required />
+              <button type="button" class="toggle-pw-btn" onclick="toggleAuthPw('login-password', this)"><i class="fa-solid fa-eye"></i></button>
+            </div>
+          </div>
+          <div id="login-error" class="auth-error hidden"></div>
+          <button type="submit" class="btn-auth-submit">
+            <i class="fa-solid fa-right-to-bracket"></i> Login
+          </button>
+          <p class="auth-switch-text">New here? <a href="#" onclick="switchAuthTab('register'); return false;">Create an account</a></p>
+        </form>
+
+        <!-- REGISTER FORM -->
+        <form id="form-user-register" class="auth-form hidden" autocomplete="off">
+          <div class="auth-hero">
+            <div class="auth-icon-circle register-icon">
+              <i class="fa-solid fa-user-plus"></i>
+            </div>
+            <h3>Create Account</h3>
+            <p>Register to file grievances with your identity</p>
+          </div>
+          <div class="auth-field">
+            <label><i class="fa-solid fa-user"></i> Full Name</label>
+            <input type="text" id="reg-name" placeholder="e.g. Deepak Kumar" required />
+          </div>
+          <div class="auth-field">
+            <label><i class="fa-solid fa-envelope"></i> Gmail Address</label>
+            <input type="email" id="reg-email" placeholder="your@gmail.com" required />
+          </div>
+          <div class="auth-field">
+            <label><i class="fa-solid fa-lock"></i> Password</label>
+            <div class="auth-pw-wrap">
+              <input type="password" id="reg-password" placeholder="Min 6 characters" required />
+              <button type="button" class="toggle-pw-btn" onclick="toggleAuthPw('reg-password', this)"><i class="fa-solid fa-eye"></i></button>
+            </div>
+          </div>
+          <div id="register-error" class="auth-error hidden"></div>
+          <div id="register-success" class="auth-success hidden"></div>
+          <button type="submit" class="btn-auth-submit register-btn">
+            <i class="fa-solid fa-user-plus"></i> Create Account
+          </button>
+          <p class="auth-switch-text">Already have an account? <a href="#" onclick="switchAuthTab('login'); return false;">Login</a></p>
+        </form>
+
+      </div>
+    </div>
+
     <!-- Toast Notification Container -->
     <div id="toast-container" class="toast-container"></div>
   </div>
