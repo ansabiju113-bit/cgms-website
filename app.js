@@ -1,4 +1,168 @@
-/** * JAN-SURAKSHA: CITIZEN GRIEVANCE MANAGEMENT SYSTEM * Real-time Transparent Submission, Smart Prioritization, AI Merging & Java OOP Integration */// ==========================================// 0. CITIZEN USER AUTHENTICATION// ==========================================function getRegisteredUsers() {  return JSON.parse(localStorage.getItem("cgms_users") || "[]");}function saveRegisteredUsers(users) {  localStorage.setItem("cgms_users", JSON.stringify(users));}function getLoggedInCitizen() {  return JSON.parse(sessionStorage.getItem("cgms_logged_in") || "null");}function setLoggedInCitizen(user) {  sessionStorage.setItem("cgms_logged_in", JSON.stringify(user));}function openUserLoginModal(mode) {  document.getElementById("modal-user-login").classList.remove("hidden");  switchAuthTab(mode || "login");  document.getElementById("login-error").classList.add("hidden");  document.getElementById("register-error").classList.add("hidden");  document.getElementById("register-success").classList.add("hidden");}function closeUserLoginModal() {  document.getElementById("modal-user-login").classList.add("hidden");}function switchAuthTab(tab) {  const isLogin = tab === "login";  document.getElementById("form-user-login").classList.toggle("hidden", !isLogin);  document.getElementById("form-user-register").classList.toggle("hidden", isLogin);  document.getElementById("tab-login").classList.toggle("active", isLogin);  document.getElementById("tab-register").classList.toggle("active", !isLogin);}function toggleAuthPw(inputId, btn) {  const input = document.getElementById(inputId);  const icon = btn.querySelector("i");  if (input.type === "password") {    input.type = "text";    icon.className = "fa-solid fa-eye-slash";  } else {    input.type = "password";    icon.className = "fa-solid fa-eye";  }}function handleUserLogin(e) {  e.preventDefault();  const email    = document.getElementById("login-email").value.trim().toLowerCase();  const password = document.getElementById("login-password").value;  const errEl    = document.getElementById("login-error");  const users = getRegisteredUsers();  const user  = users.find(u => u.email === email && u.password === password);  if (!user) {    errEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Incorrect email or password.';    errEl.classList.remove("hidden");    return;  }  setLoggedInCitizen(user);  closeUserLoginModal();  updateCitizenHeader();  showToast("Welcome back, " + user.username + "! You are now logged in.", "success");}function handleUserRegister(e) {  e.preventDefault();  const name     = document.getElementById("reg-name").value.trim();  const email    = document.getElementById("reg-email").value.trim().toLowerCase();  const password = document.getElementById("reg-password").value;  const errEl    = document.getElementById("register-error");  const okEl     = document.getElementById("register-success");  errEl.classList.add("hidden");  okEl.classList.add("hidden");  if (name.length < 2) {    errEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Please enter your full name.';    errEl.classList.remove("hidden"); return;  }  if (!email.includes("@")) {    errEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Please enter a valid email address.';    errEl.classList.remove("hidden"); return;  }  if (password.length < 6) {    errEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Password must be at least 6 characters.';    errEl.classList.remove("hidden"); return;  }  const users = getRegisteredUsers();  if (users.find(u => u.email === email)) {    errEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> This email is already registered. Please login.';    errEl.classList.remove("hidden"); return;  }  const initials = name.split(" ").map(w => w[0]).join("").toUpperCase().substring(0, 2);  const newUser = {    id:         "CIT-" + Date.now(),    username:   name,    email:      email,    password:   password,    initials:   initials,    registeredAt: new Date().toLocaleString()  };  users.push(newUser);  saveRegisteredUsers(users);  setLoggedInCitizen(newUser);  okEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> Account created! Logging you in...';  okEl.classList.remove("hidden");  setTimeout(() => {    closeUserLoginModal();    updateCitizenHeader();    showToast("Account created! Welcome, " + name + "!", "success");  }, 1200);}function logoutCitizen() {  sessionStorage.removeItem("cgms_logged_in");  updateCitizenHeader();  showToast("You have been logged out.", "info");}function updateCitizenHeader() {  const user = getLoggedInCitizen();  const loginBtn     = document.getElementById("btn-citizen-login");  const profileCard  = document.getElementById("citizen-profile-card");  if (!loginBtn || !profileCard) return;  if (user) {    loginBtn.classList.add("hidden");    profileCard.classList.remove("hidden");    document.getElementById("citizen-avatar-circle").textContent = user.initials || "U";    document.getElementById("citizen-display-name").textContent = user.username;    document.getElementById("citizen-display-email").textContent = user.email;  } else {    loginBtn.classList.remove("hidden");    profileCard.classList.add("hidden");  }}// ==========================================// ADMIN SECURITY CONFIGURATION// ==========================================const ADMIN_PASSWORD = "admin@cgms2024"; // Change this to your desired passwordconst ADMIN_MAX_ATTEMPTS = 3;// ==========================================// 1. INITIAL SEED DATA & STATE ENGINE// ==========================================const INITIAL_USERS = {  CITIZEN: { id: "U101", name: "Rajesh Kumar", role: "Citizen", wardId: "W1", wardName: "Ward 1 - Green Valley", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100" },  WARD_MEMBER: { id: "U201", name: "Suresh Menon", role: "Ward Member", wardId: "W1", wardName: "Ward 1 - Green Valley", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100" },  PRESIDENT: { id: "U301", name: "K. V. Ramanathan", role: "Panchayath President", panchayath: "Anandapuram Panchayath", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100" },  ADMIN: { id: "U401", name: "Super Admin", role: "Administrator", system: "Master Admin Console", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100" }};const INITIAL_COMPLAINTS = [  {    id: "CMP-1001",    title: "Severe Main Road Pothole near Central Market",    category: "Road Damage",    description: "A deep 4ft pothole has formed right in front of Central Market entrance causing vehicle damage and traffic jams.",    location: "Central Market Road",    lat: 10.5234,    lng: 76.2145,    wardId: "W1",    wardName: "Ward 1 - Green Valley",    citizenId: "U101",    citizenName: "Rajesh Kumar",    urgency: "HIGH",    status: "UNDER_WARD_REVIEW",    upvotes: 18,    assignedDepartment: "Unassigned",    wardRemarks: "Initial assessment by Ward Member: Confirmed deep pothole requiring PWD asphalt patching.",    photoUrl: "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=600",    createdAt: "2026-08-01 08:30",    isMerged: false,    childIds: []  },  {    id: "CMP-1002",    title: "Streetlights Outage on Temple Road",    category: "Streetlight",    description: "Five consecutive LED streetlights have been out for 3 days, making night walking hazardous for women and senior citizens.",    location: "Temple Road Junction",    lat: 10.5280,    lng: 76.2190,    wardId: "W1",    wardName: "Ward 1 - Green Valley",    citizenId: "U102",    citizenName: "Anita Sharma",    urgency: "MEDIUM",    status: "APPROVED",    upvotes: 12,    assignedDepartment: "Electrical Department",    wardRemarks: "Approved. Forwarded to Electrical Department for fuse/LED bulb replacement.",    photoUrl: "https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=600",    createdAt: "2026-07-31 18:15",    isMerged: false,    childIds: []  },  {    id: "CMP-1003",    title: "Contaminated Drinking Water Supply",    category: "Water Supply",    description: "Tap water supplied in Morning pipe schedule has yellowish color and muddy odor. Suspecting pipe leak.",    location: "Lakeview Colony Block B",    lat: 10.5310,    lng: 76.2250,    wardId: "W2",    wardName: "Ward 2 - Lakeview",    citizenId: "U103",    citizenName: "Vikram Das",    urgency: "CRITICAL",    status: "IN_PROGRESS",    upvotes: 34,    assignedDepartment: "Water & Sanitation Dept (KWA)",    wardRemarks: "High urgency. PWD team dispatched for sample testing.",    photoUrl: "https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?w=600",    createdAt: "2026-07-30 09:10",    isMerged: false,    childIds: []  },  {    id: "CMP-1004",    title: "Overflowing Garbage Bin near High School",    category: "Garbage",    description: "Public waste dump bin hasn't been emptied in 4 days. Waste spreading on road, attracting stray animals.",    location: "Government High School Gate",    lat: 10.5210,    lng: 76.2110,    wardId: "W3",    wardName: "Ward 3 - Market Square",    citizenId: "U104",    citizenName: "Meera Nair",    urgency: "HIGH",    status: "RESOLVED",    upvotes: 22,    assignedDepartment: "Sanitation & Waste Mgmt",    wardRemarks: "Sanitation vehicle cleared garbage bin and disinfected area.",    photoUrl: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=600",    createdAt: "2026-07-29 11:40",    isMerged: false,    childIds: []  },  {    id: "CMP-1005",    title: "Blocked Stormwater Drainage",    category: "Drainage",    description: "Drainage channel blocked by plastic bottles and mud. Water logging on road during rain.",    location: "Station Road Corner",    lat: 10.5240,    lng: 76.2150,    wardId: "W1",    wardName: "Ward 1 - Green Valley",    citizenId: "U105",    citizenName: "Karthik Raja",    urgency: "MEDIUM",    status: "SUBMITTED",    upvotes: 5,    assignedDepartment: "Unassigned",    wardRemarks: "",    photoUrl: "https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=600",    createdAt: "2026-08-01 09:45",    isMerged: false,    childIds: []  }];const INITIAL_NOTIFICATIONS = [  { id: "N1", userId: "U101", complaintId: "CMP-1001", message: "Ward Member Suresh Menon added field evaluation remarks on your complaint #CMP-1001.", type: "WARD_APPROVAL", time: "10 mins ago" },  { id: "N2", userId: "U101", complaintId: "CMP-1002", message: "Complaint #CMP-1002 assigned to Electrical Department.", type: "DEPT_ASSIGNMENT", time: "1 hour ago" },  { id: "N3", userId: "U101", complaintId: "CMP-1004", message: "Complaint #CMP-1004 has been marked as RESOLVED.", type: "STATUS_CHANGE", time: "1 day ago" }];// App Statelet appState = {  currentRole: "CITIZEN",  currentUser: INITIAL_USERS.CITIZEN,  complaints: JSON.parse(localStorage.getItem("jansuraksha_complaints")) || INITIAL_COMPLAINTS,  notifications: JSON.parse(localStorage.getItem("jansuraksha_notifs")) || INITIAL_NOTIFICATIONS,  upvotedIds: JSON.parse(localStorage.getItem("jansuraksha_upvotes")) || ["CMP-1001"],  aiThresholds: { text: 0.40, distanceMeters: 500 },  citizenFilterCategory: "ALL",  citizenFilterTab: "PUBLIC",  searchQuery: "",  selectedPhotoUrl: null,  adminAuthenticated: false  // Admin must login each session};// Save to LocalStoragefunction persistState() {  localStorage.setItem("jansuraksha_complaints", JSON.stringify(appState.complaints));  localStorage.setItem("jansuraksha_notifs", JSON.stringify(appState.notifications));  localStorage.setItem("jansuraksha_upvotes", JSON.stringify(appState.upvotedIds));}// Priority Calculation Formula (Matching Java Strategy Pattern)function calculatePriorityScore(c) {  const categoryWeights = {    "Electricity": 1.5, "Sewage": 1.5, "Water Supply": 1.5,    "Road Damage": 1.3, "Drainage": 1.3,    "Tree Removal": 1.2, "Garbage": 1.2,    "Streetlight": 1.1, "Public Toilet": 1.1, "Others": 1.0  };  const urgencyMultipliers = { "CRITICAL": 2.0, "HIGH": 1.5, "MEDIUM": 1.2, "LOW": 1.0 };    const baseWeight = categoryWeights[c.category] || 1.0;  const mult = urgencyMultipliers[c.urgency] || 1.0;    return ((baseWeight * mult * 10) + (c.upvotes * 2.5)).toFixed(1);}// ==========================================// 2. DOM INITIALIZATION & EVENT LISTENERS// ==========================================document.addEventListener("DOMContentLoaded", () => {
+/** * JAN-SURAKSHA: CITIZEN GRIEVANCE MANAGEMENT SYSTEM * Real-time Transparent Submission, Smart Prioritization, AI Merging & Java OOP Integration */// ==========================================// ==========================================
+// 0. CITIZEN USER AUTHENTICATION
+// ==========================================
+
+function getRegisteredUsers() {
+  return JSON.parse(localStorage.getItem("cgms_users") || "[]");
+}
+
+function saveRegisteredUsers(users) {
+  localStorage.setItem("cgms_users", JSON.stringify(users));
+}
+
+function getLoggedInCitizen() {
+  return JSON.parse(sessionStorage.getItem("cgms_logged_in") || "null");
+}
+
+function setLoggedInCitizen(user) {
+  sessionStorage.setItem("cgms_logged_in", JSON.stringify(user));
+}
+
+function openUserLoginModal(mode) {
+  document.getElementById("modal-user-login").style.display = "flex";
+  switchAuthTab(mode || "login");
+  document.getElementById("login-error").classList.add("hidden");
+  document.getElementById("register-error").classList.add("hidden");
+  document.getElementById("register-success").classList.add("hidden");
+  document.getElementById("login-email").value = "";
+  document.getElementById("login-password").value = "";
+}
+
+function closeUserLoginModal() {
+  document.getElementById("modal-user-login").style.display = "none";
+}
+
+function switchAuthTab(tab) {
+  var isLogin = tab === "login";
+  document.getElementById("form-user-login").style.display    = isLogin  ? "block" : "none";
+  document.getElementById("form-user-register").style.display = !isLogin ? "block" : "none";
+  // Update tab styles
+  var tl = document.getElementById("tab-login");
+  var tr = document.getElementById("tab-register");
+  tl.style.borderBottom = isLogin  ? "2px solid #6366f1" : "2px solid transparent";
+  tl.style.color        = isLogin  ? "#818cf8"           : "#64748b";
+  tl.style.background   = isLogin  ? "rgba(99,102,241,0.15)" : "transparent";
+  tr.style.borderBottom = !isLogin ? "2px solid #10b981" : "2px solid transparent";
+  tr.style.color        = !isLogin ? "#34d399"           : "#64748b";
+  tr.style.background   = !isLogin ? "rgba(16,185,129,0.1)"  : "transparent";
+}
+
+function toggleAuthPw(inputId, btn) {
+  var input = document.getElementById(inputId);
+  var icon = btn.querySelector("i");
+  if (input.type === "password") {
+    input.type = "text";
+    icon.className = "fa-solid fa-eye-slash";
+  } else {
+    input.type = "password";
+    icon.className = "fa-solid fa-eye";
+  }
+}
+
+function handleUserLogin(e) {
+  e.preventDefault();
+  var email    = document.getElementById("login-email").value.trim().toLowerCase();
+  var password = document.getElementById("login-password").value;
+  var errEl    = document.getElementById("login-error");
+
+  var users = getRegisteredUsers();
+  var user  = users.find(function(u){ return u.email === email && u.password === password; });
+
+  if (!user) {
+    errEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Incorrect email or password.';
+    errEl.classList.remove("hidden");
+    errEl.style.display = "flex";
+    return;
+  }
+
+  setLoggedInCitizen(user);
+  closeUserLoginModal();
+  updateCitizenHeader();
+  showToast("Welcome back, " + user.username + "!", "success");
+}
+
+function handleUserRegister(e) {
+  e.preventDefault();
+  var name     = document.getElementById("reg-name").value.trim();
+  var email    = document.getElementById("reg-email").value.trim().toLowerCase();
+  var password = document.getElementById("reg-password").value;
+  var errEl    = document.getElementById("register-error");
+  var okEl     = document.getElementById("register-success");
+
+  errEl.style.display = "none";
+  okEl.style.display  = "none";
+
+  if (name.length < 2) {
+    errEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Please enter your full name.';
+    errEl.style.display = "flex"; return;
+  }
+  if (!email.includes("@") || !email.includes(".")) {
+    errEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Please enter a valid email address.';
+    errEl.style.display = "flex"; return;
+  }
+  if (password.length < 6) {
+    errEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Password must be at least 6 characters.';
+    errEl.style.display = "flex"; return;
+  }
+
+  var users = getRegisteredUsers();
+  if (users.find(function(u){ return u.email === email; })) {
+    errEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> This email is already registered. Please login.';
+    errEl.style.display = "flex"; return;
+  }
+
+  var initials = name.split(" ").map(function(w){ return w[0]; }).join("").toUpperCase().substring(0, 2);
+  var newUser = {
+    id: "CIT-" + Date.now(),
+    username: name,
+    email: email,
+    password: password,
+    initials: initials,
+    registeredAt: new Date().toLocaleString()
+  };
+
+  users.push(newUser);
+  saveRegisteredUsers(users);
+  setLoggedInCitizen(newUser);
+
+  okEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> Account created! Logging you in...';
+  okEl.style.display = "flex";
+
+  setTimeout(function() {
+    closeUserLoginModal();
+    updateCitizenHeader();
+    showToast("Welcome, " + name + "! Account created successfully.", "success");
+  }, 1200);
+}
+
+function logoutCitizen() {
+  sessionStorage.removeItem("cgms_logged_in");
+  updateCitizenHeader();
+  showToast("You have been logged out.", "info");
+}
+
+function updateCitizenHeader() {
+  var user       = getLoggedInCitizen();
+  var loginBtn   = document.getElementById("btn-citizen-login");
+  var profileCard = document.getElementById("citizen-profile-card");
+
+  if (!loginBtn || !profileCard) return;
+
+  if (user) {
+    loginBtn.style.display = "none";
+    profileCard.classList.remove("hidden");
+    profileCard.style.display = "flex";
+    document.getElementById("citizen-avatar-circle").textContent = user.initials || "U";
+    document.getElementById("citizen-display-name").textContent  = user.username;
+    document.getElementById("citizen-display-email").textContent = user.email;
+  } else {
+    loginBtn.style.display = "flex";
+    profileCard.style.display = "none";
+    profileCard.classList.add("hidden");
+  }
+}
+
+// ==========================================// ADMIN SECURITY CONFIGURATION// ==========================================const ADMIN_PASSWORD = "admin@cgms2024"; // Change this to your desired passwordconst ADMIN_MAX_ATTEMPTS = 3;// ==========================================// 1. INITIAL SEED DATA & STATE ENGINE// ==========================================const INITIAL_USERS = {  CITIZEN: { id: "U101", name: "Rajesh Kumar", role: "Citizen", wardId: "W1", wardName: "Ward 1 - Green Valley", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100" },  WARD_MEMBER: { id: "U201", name: "Suresh Menon", role: "Ward Member", wardId: "W1", wardName: "Ward 1 - Green Valley", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100" },  PRESIDENT: { id: "U301", name: "K. V. Ramanathan", role: "Panchayath President", panchayath: "Anandapuram Panchayath", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100" },  ADMIN: { id: "U401", name: "Super Admin", role: "Administrator", system: "Master Admin Console", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100" }};const INITIAL_COMPLAINTS = [  {    id: "CMP-1001",    title: "Severe Main Road Pothole near Central Market",    category: "Road Damage",    description: "A deep 4ft pothole has formed right in front of Central Market entrance causing vehicle damage and traffic jams.",    location: "Central Market Road",    lat: 10.5234,    lng: 76.2145,    wardId: "W1",    wardName: "Ward 1 - Green Valley",    citizenId: "U101",    citizenName: "Rajesh Kumar",    urgency: "HIGH",    status: "UNDER_WARD_REVIEW",    upvotes: 18,    assignedDepartment: "Unassigned",    wardRemarks: "Initial assessment by Ward Member: Confirmed deep pothole requiring PWD asphalt patching.",    photoUrl: "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=600",    createdAt: "2026-08-01 08:30",    isMerged: false,    childIds: []  },  {    id: "CMP-1002",    title: "Streetlights Outage on Temple Road",    category: "Streetlight",    description: "Five consecutive LED streetlights have been out for 3 days, making night walking hazardous for women and senior citizens.",    location: "Temple Road Junction",    lat: 10.5280,    lng: 76.2190,    wardId: "W1",    wardName: "Ward 1 - Green Valley",    citizenId: "U102",    citizenName: "Anita Sharma",    urgency: "MEDIUM",    status: "APPROVED",    upvotes: 12,    assignedDepartment: "Electrical Department",    wardRemarks: "Approved. Forwarded to Electrical Department for fuse/LED bulb replacement.",    photoUrl: "https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=600",    createdAt: "2026-07-31 18:15",    isMerged: false,    childIds: []  },  {    id: "CMP-1003",    title: "Contaminated Drinking Water Supply",    category: "Water Supply",    description: "Tap water supplied in Morning pipe schedule has yellowish color and muddy odor. Suspecting pipe leak.",    location: "Lakeview Colony Block B",    lat: 10.5310,    lng: 76.2250,    wardId: "W2",    wardName: "Ward 2 - Lakeview",    citizenId: "U103",    citizenName: "Vikram Das",    urgency: "CRITICAL",    status: "IN_PROGRESS",    upvotes: 34,    assignedDepartment: "Water & Sanitation Dept (KWA)",    wardRemarks: "High urgency. PWD team dispatched for sample testing.",    photoUrl: "https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?w=600",    createdAt: "2026-07-30 09:10",    isMerged: false,    childIds: []  },  {    id: "CMP-1004",    title: "Overflowing Garbage Bin near High School",    category: "Garbage",    description: "Public waste dump bin hasn't been emptied in 4 days. Waste spreading on road, attracting stray animals.",    location: "Government High School Gate",    lat: 10.5210,    lng: 76.2110,    wardId: "W3",    wardName: "Ward 3 - Market Square",    citizenId: "U104",    citizenName: "Meera Nair",    urgency: "HIGH",    status: "RESOLVED",    upvotes: 22,    assignedDepartment: "Sanitation & Waste Mgmt",    wardRemarks: "Sanitation vehicle cleared garbage bin and disinfected area.",    photoUrl: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=600",    createdAt: "2026-07-29 11:40",    isMerged: false,    childIds: []  },  {    id: "CMP-1005",    title: "Blocked Stormwater Drainage",    category: "Drainage",    description: "Drainage channel blocked by plastic bottles and mud. Water logging on road during rain.",    location: "Station Road Corner",    lat: 10.5240,    lng: 76.2150,    wardId: "W1",    wardName: "Ward 1 - Green Valley",    citizenId: "U105",    citizenName: "Karthik Raja",    urgency: "MEDIUM",    status: "SUBMITTED",    upvotes: 5,    assignedDepartment: "Unassigned",    wardRemarks: "",    photoUrl: "https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=600",    createdAt: "2026-08-01 09:45",    isMerged: false,    childIds: []  }];const INITIAL_NOTIFICATIONS = [  { id: "N1", userId: "U101", complaintId: "CMP-1001", message: "Ward Member Suresh Menon added field evaluation remarks on your complaint #CMP-1001.", type: "WARD_APPROVAL", time: "10 mins ago" },  { id: "N2", userId: "U101", complaintId: "CMP-1002", message: "Complaint #CMP-1002 assigned to Electrical Department.", type: "DEPT_ASSIGNMENT", time: "1 hour ago" },  { id: "N3", userId: "U101", complaintId: "CMP-1004", message: "Complaint #CMP-1004 has been marked as RESOLVED.", type: "STATUS_CHANGE", time: "1 day ago" }];// App Statelet appState = {  currentRole: "CITIZEN",  currentUser: INITIAL_USERS.CITIZEN,  complaints: JSON.parse(localStorage.getItem("jansuraksha_complaints")) || INITIAL_COMPLAINTS,  notifications: JSON.parse(localStorage.getItem("jansuraksha_notifs")) || INITIAL_NOTIFICATIONS,  upvotedIds: JSON.parse(localStorage.getItem("jansuraksha_upvotes")) || ["CMP-1001"],  aiThresholds: { text: 0.40, distanceMeters: 500 },  citizenFilterCategory: "ALL",  citizenFilterTab: "PUBLIC",  searchQuery: "",  selectedPhotoUrl: null,  adminAuthenticated: false  // Admin must login each session};// Save to LocalStoragefunction persistState() {  localStorage.setItem("jansuraksha_complaints", JSON.stringify(appState.complaints));  localStorage.setItem("jansuraksha_notifs", JSON.stringify(appState.notifications));  localStorage.setItem("jansuraksha_upvotes", JSON.stringify(appState.upvotedIds));}// Priority Calculation Formula (Matching Java Strategy Pattern)function calculatePriorityScore(c) {  const categoryWeights = {    "Electricity": 1.5, "Sewage": 1.5, "Water Supply": 1.5,    "Road Damage": 1.3, "Drainage": 1.3,    "Tree Removal": 1.2, "Garbage": 1.2,    "Streetlight": 1.1, "Public Toilet": 1.1, "Others": 1.0  };  const urgencyMultipliers = { "CRITICAL": 2.0, "HIGH": 1.5, "MEDIUM": 1.2, "LOW": 1.0 };    const baseWeight = categoryWeights[c.category] || 1.0;  const mult = urgencyMultipliers[c.urgency] || 1.0;    return ((baseWeight * mult * 10) + (c.upvotes * 2.5)).toFixed(1);}// ==========================================// 2. DOM INITIALIZATION & EVENT LISTENERS// ==========================================document.addEventListener("DOMContentLoaded", () => {
   // Always require fresh login on every page visit
   localStorage.removeItem("cgms_logged_in");
   sessionStorage.removeItem("cgms_logged_in");
