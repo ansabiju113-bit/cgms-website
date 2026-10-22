@@ -4,6 +4,12 @@
  */
 
 // ==========================================
+// ADMIN SECURITY CONFIGURATION
+// ==========================================
+const ADMIN_PASSWORD = "admin@cgms2024"; // Change this to your desired password
+const ADMIN_MAX_ATTEMPTS = 3;
+
+// ==========================================
 // 1. INITIAL SEED DATA & STATE ENGINE
 // ==========================================
 
@@ -144,7 +150,8 @@ let appState = {
   citizenFilterCategory: "ALL",
   citizenFilterTab: "PUBLIC",
   searchQuery: "",
-  selectedPhotoUrl: null
+  selectedPhotoUrl: null,
+  adminAuthenticated: false  // Admin must login each session
 };
 
 // Save to LocalStorage
@@ -181,12 +188,33 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function setupEventListeners() {
-  // Role Switcher Buttons
+  // Role Switcher Buttons — Admin requires password authentication
   document.querySelectorAll(".role-btn").forEach(btn => {
     btn.addEventListener("click", (e) => {
       const role = e.currentTarget.dataset.role;
-      switchRole(role);
+      if (role === "ADMIN") {
+        openAdminLoginModal();
+      } else {
+        // If switching away from admin, lock it back
+        appState.adminAuthenticated = false;
+        switchRole(role);
+      }
     });
+  });
+
+  // Admin Login Form
+  document.getElementById("form-admin-login").addEventListener("submit", verifyAdminLogin);
+  document.getElementById("btn-admin-login-close").addEventListener("click", closeAdminLoginModal);
+  document.getElementById("toggle-admin-password").addEventListener("click", () => {
+    const input = document.getElementById("admin-password-input");
+    const icon = document.getElementById("toggle-admin-password").querySelector("i");
+    if (input.type === "password") {
+      input.type = "text";
+      icon.className = "fa-solid fa-eye-slash";
+    } else {
+      input.type = "password";
+      icon.className = "fa-solid fa-eye";
+    }
   });
 
   // Java Code Inspector Modal
@@ -246,7 +274,66 @@ function setupEventListeners() {
 }
 
 // ==========================================
-// 3. ROLE SWITCHING & VIEW ROUTING
+// 3. ADMIN AUTHENTICATION
+// ==========================================
+
+let adminLoginAttempts = 0;
+
+function openAdminLoginModal() {
+  // If already authenticated this session, go straight in
+  if (appState.adminAuthenticated) {
+    switchRole("ADMIN");
+    return;
+  }
+  const modal = document.getElementById("modal-admin-login");
+  modal.classList.remove("hidden");
+  document.getElementById("admin-password-input").value = "";
+  document.getElementById("admin-login-error").classList.add("hidden");
+  document.getElementById("admin-password-input").focus();
+}
+
+function closeAdminLoginModal() {
+  document.getElementById("modal-admin-login").classList.add("hidden");
+  document.getElementById("admin-password-input").value = "";
+  document.getElementById("admin-login-error").classList.add("hidden");
+}
+
+function verifyAdminLogin(e) {
+  e.preventDefault();
+  const entered = document.getElementById("admin-password-input").value;
+  const errorEl = document.getElementById("admin-login-error");
+  const loginBtn = document.getElementById("btn-admin-login-submit");
+
+  if (entered === ADMIN_PASSWORD) {
+    adminLoginAttempts = 0;
+    appState.adminAuthenticated = true;
+    closeAdminLoginModal();
+    switchRole("ADMIN");
+    showToast("Admin access granted. Welcome, Super Admin!", "success");
+  } else {
+    adminLoginAttempts++;
+    const remaining = ADMIN_MAX_ATTEMPTS - adminLoginAttempts;
+
+    if (remaining <= 0) {
+      errorEl.innerHTML = `<i class="fa-solid fa-ban"></i> Too many failed attempts. Access locked. Refresh the page to try again.`;
+      errorEl.classList.remove("hidden");
+      loginBtn.disabled = true;
+      loginBtn.style.opacity = "0.5";
+      document.getElementById("admin-password-input").disabled = true;
+    } else {
+      errorEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Incorrect password. ${remaining} attempt${remaining > 1 ? 's' : ''} remaining.`;
+      errorEl.classList.remove("hidden");
+    }
+
+    // Shake the input
+    const input = document.getElementById("admin-password-input");
+    input.classList.add("shake-error");
+    setTimeout(() => input.classList.remove("shake-error"), 500);
+  }
+}
+
+// ==========================================
+// 4. ROLE SWITCHING & VIEW ROUTING
 // ==========================================
 
 function switchRole(roleKey) {
@@ -377,14 +464,19 @@ function toggleUpvote(complaintId) {
   } else {
     appState.upvotedIds.push(complaintId);
     complaint.upvotes += 1;
-    showToast(`Upvoted #${complaintId}! Increased Priority Score to ${calculatePriorityScore(complaint)}`, "success");
-    
-    // Add Notification
+    showToast(`Upvoted #${complaintId}! Priority Score: ${calculatePriorityScore(complaint)}`, "success");
+
+    // Notify the citizen who submitted
     addNotification(appState.currentUser.id, complaintId, `You upvoted complaint #${complaintId} (${complaint.title}). Priority score increased.`, "UPVOTE");
+
+    // Notify admin so vote count is visible in admin panel
+    addNotification("U401", complaintId, `🔺 Complaint #${complaintId} "${complaint.title}" now has ${complaint.upvotes} community upvotes. Priority score: ${calculatePriorityScore(complaint)} pts.`, "UPVOTE");
   }
 
   persistState();
   renderRoleView();
+  // If admin is watching, refresh their complaint list too
+  if (appState.currentRole === "ADMIN") renderAdminComplaintList();
 }
 
 // ==========================================
@@ -461,12 +553,16 @@ function handleComplaintSubmit(e) {
   appState.complaints.unshift(newComplaint);
   appState.upvotedIds.push(newId);
 
+  // Notify the citizen
   addNotification(appState.currentUser.id, newId, `Grievance #${newId} filed successfully! Live tracking is active.`, "STATUS_CHANGE");
+
+  // Notify admin (U401) directly so it appears in Admin panel immediately
+  addNotification("U401", newId, `🚨 New complaint #${newId} received from ${appState.currentUser.name}: "${title}" (${category} • ${urgency})`, "NEW_COMPLAINT");
 
   persistState();
   closeAllModals();
   renderRoleView();
-  showToast(`Grievance #${newId} submitted transparently!`, "success");
+  showToast(`Grievance #${newId} submitted! Admin has been notified.`, "success");
   
   // Reset Form
   document.getElementById("form-submit-complaint").reset();
@@ -893,6 +989,15 @@ Category Breakdown:
 // 11. ADMIN PORTAL LOGIC
 // ==========================================
 
+let adminComplaintFilter = "ALL";
+
+function setAdminFilter(filter, btn) {
+  adminComplaintFilter = filter;
+  document.querySelectorAll(".admin-tab-btn").forEach(b => b.classList.remove("active"));
+  if (btn) btn.classList.add("active");
+  renderAdminComplaintList();
+}
+
 function renderAdminPortal() {
   const userBox = document.getElementById("admin-user-list");
   userBox.innerHTML = Object.values(INITIAL_USERS).map(u => `
@@ -909,11 +1014,154 @@ function renderAdminPortal() {
   deptBox.innerHTML = `
     <div class="admin-dept-row"><span>Public Works Dept (PWD Roads)</span><span class="status-pill status-IN_PROGRESS">4 Tasks</span></div>
     <div class="admin-dept-row"><span>Electrical Department</span><span class="status-pill status-IN_PROGRESS">2 Tasks</span></div>
-    <div class="admin-dept-row"><span>Water & Sanitation Dept</span><span class="status-pill status-IN_PROGRESS">5 Tasks</span></div>
-    <div class="admin-dept-row"><span>Health & Environment</span><span class="status-pill status-RESOLVED">1 Task</span></div>
+    <div class="admin-dept-row"><span>Water &amp; Sanitation Dept</span><span class="status-pill status-IN_PROGRESS">5 Tasks</span></div>
+    <div class="admin-dept-row"><span>Health &amp; Environment</span><span class="status-pill status-RESOLVED">1 Task</span></div>
+  `;
+
+  renderAdminStats();
+  renderAdminComplaintList();
+}
+
+function renderAdminStats() {
+  const all      = appState.complaints.length;
+  const pending  = appState.complaints.filter(c => c.status === "SUBMITTED").length;
+  const approved = appState.complaints.filter(c => c.status === "APPROVED" || c.status === "IN_PROGRESS").length;
+  const rejected = appState.complaints.filter(c => c.status === "REJECTED").length;
+  const resolved = appState.complaints.filter(c => c.status === "RESOLVED").length;
+
+  const statsBox = document.getElementById("admin-complaint-stats");
+  if (!statsBox) return;
+  statsBox.innerHTML = `
+    <div class="acstat-card acstat-blue"><i class="fa-solid fa-folder-open"></i><div><span class="acstat-num">${all}</span><span class="acstat-label">Total</span></div></div>
+    <div class="acstat-card acstat-yellow"><i class="fa-solid fa-hourglass-half"></i><div><span class="acstat-num">${pending}</span><span class="acstat-label">Pending</span></div></div>
+    <div class="acstat-card acstat-green"><i class="fa-solid fa-circle-check"></i><div><span class="acstat-num">${approved}</span><span class="acstat-label">Approved</span></div></div>
+    <div class="acstat-card acstat-red"><i class="fa-solid fa-circle-xmark"></i><div><span class="acstat-num">${rejected}</span><span class="acstat-label">Rejected</span></div></div>
+    <div class="acstat-card acstat-teal"><i class="fa-solid fa-trophy"></i><div><span class="acstat-num">${resolved}</span><span class="acstat-label">Resolved</span></div></div>
   `;
 }
 
+function renderAdminComplaintList() {
+  const container = document.getElementById("admin-complaints-list");
+  if (!container) return;
+
+  const sortSel = document.getElementById("admin-sort-select");
+  const sortBy = sortSel ? sortSel.value : "newest";
+
+  let list = appState.complaints.filter(c => !c.isMerged);
+  if (adminComplaintFilter !== "ALL") {
+    list = list.filter(c => c.status === adminComplaintFilter);
+  }
+
+  // Sort
+  if (sortBy === "newest") {
+    list = [...list].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  } else if (sortBy === "votes") {
+    list = [...list].sort((a, b) => b.upvotes - a.upvotes);
+  } else if (sortBy === "priority") {
+    list = [...list].sort((a, b) => calculatePriorityScore(b) - calculatePriorityScore(a));
+  }
+
+  if (list.length === 0) {
+    container.innerHTML = `<div style="padding:40px; text-align:center; color:#64748b;"><i class="fa-solid fa-inbox" style="font-size:2rem;margin-bottom:12px;display:block;"></i>No complaints found for the selected filter.</div>`;
+    return;
+  }
+
+  container.innerHTML = "";
+  list.forEach(c => {
+    const div = document.createElement("div");
+    div.className = "admin-complaint-row";
+
+    let actionBtns = "";
+    if (c.status === "SUBMITTED" || c.status === "UNDER_WARD_REVIEW") {
+      actionBtns = `
+        <button class="acr-btn acr-approve" onclick="adminApprove('${c.id}')"><i class="fa-solid fa-check"></i> Approve</button>
+        <button class="acr-btn acr-reject"  onclick="adminReject('${c.id}')"><i class="fa-solid fa-xmark"></i> Reject</button>`;
+    } else if (c.status === "APPROVED" || c.status === "IN_PROGRESS") {
+      actionBtns = `
+        <button class="acr-btn acr-resolve" onclick="adminResolve('${c.id}')"><i class="fa-solid fa-trophy"></i> Mark Resolved</button>
+        <button class="acr-btn acr-reject"  onclick="adminReject('${c.id}')"><i class="fa-solid fa-xmark"></i> Reject</button>`;
+    } else if (c.status === "REJECTED") {
+      actionBtns = `<button class="acr-btn acr-approve" onclick="adminApprove('${c.id}')"><i class="fa-solid fa-rotate-left"></i> Reopen & Approve</button>`;
+    } else if (c.status === "RESOLVED") {
+      actionBtns = `<span style="font-size:0.78rem;color:#10b981;font-weight:700;"><i class="fa-solid fa-circle-check"></i> Fully Resolved</span>`;
+    }
+
+    const isNew = !c.wardRemarks || c.wardRemarks === "Received transparently via Citizen Portal. Pending Ward Member review.";
+    const priorityScore = calculatePriorityScore(c);
+
+    div.innerHTML = `
+      <div class="acr-left">
+        <div class="acr-id-row">
+          ${isNew && c.status === "SUBMITTED" ? `<span class="acr-new-badge"><i class="fa-solid fa-bolt"></i> NEW</span>` : ""}
+          <span class="acr-id">#${c.id}</span>
+          <span class="status-pill status-${c.status}">${formatStatus(c.status)}</span>
+          <span class="urgency-tag ${c.urgency}">${c.urgency}</span>
+        </div>
+        <h4 class="acr-title">${c.title}</h4>
+        <div class="acr-meta">
+          <span><i class="fa-solid fa-user"></i> ${c.citizenName}</span>
+          <span><i class="fa-solid fa-location-dot"></i> ${c.location}</span>
+          <span><i class="fa-solid fa-tag"></i> ${c.category}</span>
+          <span><i class="fa-solid fa-map-pin"></i> ${c.wardName}</span>
+          <span><i class="fa-solid fa-clock"></i> ${c.createdAt}</span>
+        </div>
+        ${c.wardRemarks && c.wardRemarks !== "Received transparently via Citizen Portal. Pending Ward Member review." ? `<div class="acr-remark"><i class="fa-solid fa-comment-dots"></i> <em>${c.wardRemarks}</em></div>` : ""}
+      </div>
+      <div class="acr-right-col">
+        <div class="acr-vote-badge">
+          <i class="fa-solid fa-circle-up"></i>
+          <span class="acr-vote-num">${c.upvotes}</span>
+          <span class="acr-vote-label">votes</span>
+        </div>
+        <div class="acr-priority-score">
+          <span>${priorityScore}</span>
+          <small>priority pts</small>
+        </div>
+        <div class="acr-actions">${actionBtns}</div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function adminApprove(id) {
+  const complaint = appState.complaints.find(c => c.id === id);
+  if (!complaint) return;
+  const remarks = prompt("Approve complaint #" + id + "?\nEnter admin approval remarks:", "Verified and approved by System Administrator.");
+  if (remarks === null) return;
+  complaint.status = "APPROVED";
+  complaint.wardRemarks = "[Admin Override] " + remarks;
+  addNotification(complaint.citizenId, id, "Admin approved your grievance #" + id + ". Remarks: " + remarks, "WARD_APPROVAL");
+  persistState();
+  renderAdminPortal();
+  showToast("Grievance #" + id + " approved by Admin!", "success");
+}
+
+function adminReject(id) {
+  const complaint = appState.complaints.find(c => c.id === id);
+  if (!complaint) return;
+  const reason = prompt("Reject complaint #" + id + "?\nEnter rejection reason:", "Rejected by System Administrator after review.");
+  if (reason === null) return;
+  complaint.status = "REJECTED";
+  complaint.wardRemarks = "[Admin Override] " + reason;
+  addNotification(complaint.citizenId, id, "Admin rejected your grievance #" + id + ". Reason: " + reason, "STATUS_CHANGE");
+  persistState();
+  renderAdminPortal();
+  showToast("Grievance #" + id + " rejected by Admin.", "info");
+}
+
+function adminResolve(id) {
+  const complaint = appState.complaints.find(c => c.id === id);
+  if (!complaint) return;
+  const remarks = prompt("Mark complaint #" + id + " as RESOLVED?\nEnter resolution details:", "Issue resolved by municipal action team. Verified by Admin.");
+  if (remarks === null) return;
+  complaint.status = "RESOLVED";
+  complaint.wardRemarks = "[Admin Resolved] " + remarks;
+  addNotification(complaint.citizenId, id, "Your grievance #" + id + " has been marked RESOLVED. " + remarks, "STATUS_CHANGE");
+  persistState();
+  renderAdminPortal();
+  showToast("Grievance #" + id + " marked as Resolved!", "success");
+}
 // ==========================================
 // 12. UTILITY FUNCTIONS
 // ==========================================
