@@ -582,85 +582,82 @@
       </div>
     </div>
 
-    <!-- 6. CITIZEN LOGIN / REGISTER MODAL -->
-    <div id="modal-user-login" class="modal-overlay hidden user-login-overlay">
-      <div class="modal-card user-login-card">
+    <!-- CITIZEN LOGIN / REGISTER MODAL -->
+    <div id="modal-user-login" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px); z-index:10000; align-items:center; justify-content:center;">
+      <div style="background:linear-gradient(145deg,#1e293b,#0f172a); border:1px solid rgba(99,102,241,0.4); border-radius:20px; width:100%; max-width:420px; overflow:hidden; box-shadow:0 25px 60px rgba(0,0,0,0.7); animation:slideUp 0.25s ease;">
 
         <!-- Tabs -->
-        <div class="user-login-tabs">
-          <button class="ulogin-tab active" id="tab-login" onclick="switchAuthTab('login')">
+        <div style="display:flex; align-items:center; background:rgba(0,0,0,0.25); border-bottom:1px solid rgba(255,255,255,0.07); padding:6px 6px 0; gap:4px;">
+          <button id="tab-login" onclick="switchAuthTab('login')" style="flex:1; padding:11px; background:rgba(99,102,241,0.15); border:none; border-bottom:2px solid #6366f1; color:#818cf8; font-size:0.84rem; font-weight:700; cursor:pointer; border-radius:8px 8px 0 0; display:flex; align-items:center; justify-content:center; gap:6px;">
             <i class="fa-solid fa-right-to-bracket"></i> Login
           </button>
-          <button class="ulogin-tab" id="tab-register" onclick="switchAuthTab('register')">
+          <button id="tab-register" onclick="switchAuthTab('register')" style="flex:1; padding:11px; background:transparent; border:none; border-bottom:2px solid transparent; color:#64748b; font-size:0.84rem; font-weight:700; cursor:pointer; border-radius:8px 8px 0 0; display:flex; align-items:center; justify-content:center; gap:6px;">
             <i class="fa-solid fa-user-plus"></i> Register
           </button>
-          <button class="ulogin-close" onclick="closeUserLoginModal()">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
+          <button onclick="closeUserLoginModal()" style="background:rgba(255,255,255,0.05); border:none; color:#64748b; width:34px; height:34px; border-radius:8px; cursor:pointer; font-size:1rem; margin-bottom:6px; display:flex; align-items:center; justify-content:center;">&#x2715;</button>
         </div>
 
         <!-- LOGIN FORM -->
-        <form id="form-user-login" class="auth-form" autocomplete="off">
-          <div class="auth-hero">
-            <div class="auth-icon-circle login-icon">
+        <form id="form-user-login" onsubmit="handleUserLogin(event)" style="padding:28px;">
+          <div style="text-align:center; margin-bottom:22px;">
+            <div style="width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#4f46e5); display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:1.6rem; color:#fff; box-shadow:0 8px 24px rgba(99,102,241,0.4);">
               <i class="fa-solid fa-user-lock"></i>
             </div>
-            <h3>Welcome Back</h3>
-            <p>Login to post and track your grievances</p>
+            <h3 style="color:#f1f5f9; font-size:1.3rem; font-weight:800; margin-bottom:4px;">Welcome Back</h3>
+            <p style="color:#64748b; font-size:0.82rem;">Login to post and track your complaints</p>
           </div>
-          <div class="auth-field">
-            <label><i class="fa-solid fa-envelope"></i> Email Address</label>
-            <input type="email" id="login-email" placeholder="your@gmail.com" required />
+          <div style="margin-bottom:16px;">
+            <label style="display:flex; align-items:center; gap:6px; color:#94a3b8; font-size:0.78rem; font-weight:700; margin-bottom:6px;"><i class="fa-solid fa-envelope"></i> Email Address</label>
+            <input type="email" id="login-email" placeholder="your@gmail.com" required style="width:100%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:11px 14px; color:#f1f5f9; font-size:0.9rem; box-sizing:border-box; outline:none;" onfocus="this.style.borderColor='rgba(99,102,241,0.6)'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'" />
           </div>
-          <div class="auth-field">
-            <label><i class="fa-solid fa-lock"></i> Password</label>
-            <div class="auth-pw-wrap">
-              <input type="password" id="login-password" placeholder="Enter your password" required />
-              <button type="button" class="toggle-pw-btn" onclick="toggleAuthPw('login-password', this)"><i class="fa-solid fa-eye"></i></button>
+          <div style="margin-bottom:16px;">
+            <label style="display:flex; align-items:center; gap:6px; color:#94a3b8; font-size:0.78rem; font-weight:700; margin-bottom:6px;"><i class="fa-solid fa-lock"></i> Password</label>
+            <div style="position:relative;">
+              <input type="password" id="login-password" placeholder="Enter your password" required style="width:100%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:11px 44px 11px 14px; color:#f1f5f9; font-size:0.9rem; box-sizing:border-box; outline:none;" onfocus="this.style.borderColor='rgba(99,102,241,0.6)'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'" />
+              <button type="button" onclick="toggleAuthPw('login-password',this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:#64748b; cursor:pointer; font-size:0.9rem; padding:4px;"><i class="fa-solid fa-eye"></i></button>
             </div>
           </div>
-          <div id="login-error" class="auth-error hidden"></div>
-          <button type="submit" class="btn-auth-submit">
+          <div id="login-error" style="display:none; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171; border-radius:8px; padding:10px 14px; font-size:0.8rem; font-weight:600; margin-bottom:14px; align-items:center; gap:8px;"></div>
+          <button type="submit" style="width:100%; padding:13px; background:linear-gradient(135deg,#6366f1,#4f46e5); color:#fff; border:none; border-radius:10px; font-size:0.92rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:14px; box-shadow:0 4px 14px rgba(99,102,241,0.4);">
             <i class="fa-solid fa-right-to-bracket"></i> Login
           </button>
-          <p class="auth-switch-text">New here? <a href="#" onclick="switchAuthTab('register'); return false;">Create an account</a></p>
+          <p style="text-align:center; color:#64748b; font-size:0.8rem;">No account? <a href="#" onclick="switchAuthTab('register'); return false;" style="color:#818cf8; font-weight:700; text-decoration:none;">Create one</a></p>
         </form>
 
         <!-- REGISTER FORM -->
-        <form id="form-user-register" class="auth-form hidden" autocomplete="off">
-          <div class="auth-hero">
-            <div class="auth-icon-circle register-icon">
+        <form id="form-user-register" onsubmit="handleUserRegister(event)" style="display:none; padding:28px;">
+          <div style="text-align:center; margin-bottom:22px;">
+            <div style="width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg,#10b981,#059669); display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:1.6rem; color:#fff; box-shadow:0 8px 24px rgba(16,185,129,0.4);">
               <i class="fa-solid fa-user-plus"></i>
             </div>
-            <h3>Create Account</h3>
-            <p>Register to file grievances with your identity</p>
+            <h3 style="color:#f1f5f9; font-size:1.3rem; font-weight:800; margin-bottom:4px;">Create Account</h3>
+            <p style="color:#64748b; font-size:0.82rem;">Register with your name, email and password</p>
           </div>
-          <div class="auth-field">
-            <label><i class="fa-solid fa-user"></i> Full Name</label>
-            <input type="text" id="reg-name" placeholder="e.g. Deepak Kumar" required />
+          <div style="margin-bottom:14px;">
+            <label style="display:flex; align-items:center; gap:6px; color:#94a3b8; font-size:0.78rem; font-weight:700; margin-bottom:6px;"><i class="fa-solid fa-user"></i> Full Name</label>
+            <input type="text" id="reg-name" placeholder="e.g. Deepak Kumar" required style="width:100%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:11px 14px; color:#f1f5f9; font-size:0.9rem; box-sizing:border-box; outline:none;" onfocus="this.style.borderColor='rgba(16,185,129,0.6)'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'" />
           </div>
-          <div class="auth-field">
-            <label><i class="fa-solid fa-envelope"></i> Gmail Address</label>
-            <input type="email" id="reg-email" placeholder="your@gmail.com" required />
+          <div style="margin-bottom:14px;">
+            <label style="display:flex; align-items:center; gap:6px; color:#94a3b8; font-size:0.78rem; font-weight:700; margin-bottom:6px;"><i class="fa-solid fa-envelope"></i> Gmail Address</label>
+            <input type="email" id="reg-email" placeholder="your@gmail.com" required style="width:100%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:11px 14px; color:#f1f5f9; font-size:0.9rem; box-sizing:border-box; outline:none;" onfocus="this.style.borderColor='rgba(16,185,129,0.6)'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'" />
           </div>
-          <div class="auth-field">
-            <label><i class="fa-solid fa-lock"></i> Password</label>
-            <div class="auth-pw-wrap">
-              <input type="password" id="reg-password" placeholder="Min 6 characters" required />
-              <button type="button" class="toggle-pw-btn" onclick="toggleAuthPw('reg-password', this)"><i class="fa-solid fa-eye"></i></button>
+          <div style="margin-bottom:14px;">
+            <label style="display:flex; align-items:center; gap:6px; color:#94a3b8; font-size:0.78rem; font-weight:700; margin-bottom:6px;"><i class="fa-solid fa-lock"></i> Password</label>
+            <div style="position:relative;">
+              <input type="password" id="reg-password" placeholder="Min 6 characters" required style="width:100%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:11px 44px 11px 14px; color:#f1f5f9; font-size:0.9rem; box-sizing:border-box; outline:none;" onfocus="this.style.borderColor='rgba(16,185,129,0.6)'" onblur="this.style.borderColor='rgba(255,255,255,0.12)'" />
+              <button type="button" onclick="toggleAuthPw('reg-password',this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:#64748b; cursor:pointer; font-size:0.9rem; padding:4px;"><i class="fa-solid fa-eye"></i></button>
             </div>
           </div>
-          <div id="register-error" class="auth-error hidden"></div>
-          <div id="register-success" class="auth-success hidden"></div>
-          <button type="submit" class="btn-auth-submit register-btn">
+          <div id="register-error"   style="display:none; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#f87171; border-radius:8px; padding:10px 14px; font-size:0.8rem; font-weight:600; margin-bottom:12px; align-items:center; gap:8px;"></div>
+          <div id="register-success" style="display:none; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); color:#34d399; border-radius:8px; padding:10px 14px; font-size:0.8rem; font-weight:600; margin-bottom:12px; align-items:center; gap:8px;"></div>
+          <button type="submit" style="width:100%; padding:13px; background:linear-gradient(135deg,#10b981,#059669); color:#fff; border:none; border-radius:10px; font-size:0.92rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:14px; box-shadow:0 4px 14px rgba(16,185,129,0.4);">
             <i class="fa-solid fa-user-plus"></i> Create Account
           </button>
-          <p class="auth-switch-text">Already have an account? <a href="#" onclick="switchAuthTab('login'); return false;">Login</a></p>
+          <p style="text-align:center; color:#64748b; font-size:0.8rem;">Already registered? <a href="#" onclick="switchAuthTab('login'); return false;" style="color:#818cf8; font-weight:700; text-decoration:none;">Login</a></p>
         </form>
 
       </div>
     </div>
-
     <!-- Toast Notification Container -->
     <div id="toast-container" class="toast-container"></div>
   </div>
