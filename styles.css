@@ -1430,3 +1430,497 @@ body {
   .form-row { grid-template-columns: 1fr; }
   .portal-hero { flex-direction: column; gap: 16px; text-align: center; }
 }
+
+/* ==========================================================================
+   ADMIN LOGIN SECURITY MODAL
+   ========================================================================== */
+
+.admin-login-overlay {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.admin-login-card {
+  max-width: 460px;
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  box-shadow: 0 0 60px rgba(239, 68, 68, 0.15), 0 25px 50px rgba(0,0,0,0.6);
+  position: relative;
+}
+
+.admin-login-header {
+  background: linear-gradient(135deg, #1e0a0a 0%, #2d1515 50%, #1a0d2e 100%);
+  border-bottom: 1px solid rgba(239, 68, 68, 0.2);
+  padding: 36px 32px 28px;
+  text-align: center;
+  position: relative;
+}
+
+.admin-lock-icon {
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  color: #fff;
+  margin: 0 auto 16px;
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+  animation: pulseGlow 2s infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.4); }
+  50%       { box-shadow: 0 0 40px rgba(239, 68, 68, 0.8); }
+}
+
+.admin-login-header h3 {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin-bottom: 8px;
+}
+
+.admin-login-header p {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  line-height: 1.5;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.admin-close-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #94a3b8;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.admin-close-btn:hover {
+  background: rgba(239,68,68,0.2);
+  color: #ef4444;
+  border-color: rgba(239,68,68,0.3);
+}
+
+.admin-login-body {
+  padding: 28px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.admin-info-badge {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 0.78rem;
+  color: #fbbf24;
+  line-height: 1.5;
+}
+.admin-info-badge i { margin-top: 2px; flex-shrink: 0; }
+
+.admin-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-field-group label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.admin-field-group label i { color: #ef4444; }
+
+.admin-password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.admin-password-wrapper input {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  padding: 13px 48px 13px 16px;
+  color: #f8fafc;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  letter-spacing: 0.05em;
+}
+.admin-password-wrapper input:focus {
+  border-color: rgba(239, 68, 68, 0.5);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+.admin-password-wrapper input::placeholder { color: #475569; letter-spacing: 0; }
+
+.toggle-pw-btn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 4px;
+  transition: color 0.2s;
+}
+.toggle-pw-btn:hover { color: #94a3b8; }
+
+.admin-error-msg {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 0.82rem;
+  color: #fca5a5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.admin-error-msg.hidden { display: none; }
+
+.admin-login-footer {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-admin-submit {
+  flex: 1;
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 13px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+}
+.btn-admin-submit:hover {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.5);
+  transform: translateY(-1px);
+}
+.btn-admin-submit:disabled { cursor: not-allowed; transform: none; opacity: 0.5; }
+
+@keyframes shakeInput {
+  0%, 100% { transform: translateX(0); }
+  15%       { transform: translateX(-8px); }
+  30%       { transform: translateX(8px); }
+  45%       { transform: translateX(-6px); }
+  60%       { transform: translateX(6px); }
+  75%       { transform: translateX(-3px); }
+  90%       { transform: translateX(3px); }
+}
+.shake-error {
+  animation: shakeInput 0.5s ease-in-out;
+  border-color: rgba(239, 68, 68, 0.7) !important;
+}
+
+/* ==========================================================================
+   ADMIN COMPLAINT MANAGEMENT SECTION
+   ========================================================================== */
+
+/* Stats Row */
+.admin-complaint-stats {
+  display: flex;
+  gap: 14px;
+  padding: 20px 20px 0;
+  flex-wrap: wrap;
+}
+
+.acstat-card {
+  flex: 1;
+  min-width: 100px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font-size: 1.4rem;
+}
+.acstat-card .acstat-num  { display: block; font-size: 1.6rem; font-weight: 800; line-height: 1; }
+.acstat-card .acstat-label { display: block; font-size: 0.72rem; color: #94a3b8; margin-top: 2px; font-weight: 600; }
+
+.acstat-blue   { background: rgba(59,130,246,0.1);  border-color: rgba(59,130,246,0.25);  color: #60a5fa; }
+.acstat-yellow { background: rgba(245,158,11,0.1);  border-color: rgba(245,158,11,0.25);  color: #fbbf24; }
+.acstat-green  { background: rgba(16,185,129,0.1);  border-color: rgba(16,185,129,0.25);  color: #34d399; }
+.acstat-red    { background: rgba(239,68,68,0.1);   border-color: rgba(239,68,68,0.25);   color: #f87171; }
+.acstat-teal   { background: rgba(20,184,166,0.1);  border-color: rgba(20,184,166,0.25);  color: #2dd4bf; }
+
+/* Filter Tabs */
+.admin-filter-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 16px 20px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.admin-tab-btn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #94a3b8;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+.admin-tab-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: #f8fafc;
+}
+.admin-tab-btn.active {
+  background: rgba(59,130,246,0.2);
+  border-color: rgba(59,130,246,0.4);
+  color: #60a5fa;
+}
+
+/* Complaint List */
+.admin-complaints-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.admin-complaint-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  transition: background 0.2s;
+}
+.admin-complaint-row:hover {
+  background: rgba(255,255,255,0.03);
+}
+.admin-complaint-row:last-child {
+  border-bottom: none;
+}
+
+.acr-left { flex: 1; min-width: 0; }
+
+.acr-id-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.acr-id {
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: #60a5fa;
+}
+.acr-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.acr-meta {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+.acr-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.acr-meta i { color: #475569; }
+
+.acr-remark {
+  margin-top: 8px;
+  font-size: 0.77rem;
+  color: #a78bfa;
+  font-style: italic;
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+/* Action buttons */
+.acr-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.acr-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.acr-approve {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(16,185,129,0.3);
+}
+.acr-approve:hover {
+  background: linear-gradient(135deg, #34d399, #10b981);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(16,185,129,0.4);
+}
+
+.acr-reject {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(239,68,68,0.3);
+}
+.acr-reject:hover {
+  background: linear-gradient(135deg, #f87171, #ef4444);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(239,68,68,0.4);
+}
+
+.acr-resolve {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(139,92,246,0.3);
+}
+.acr-resolve:hover {
+  background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(139,92,246,0.4);
+}
+
+.mt-4 { margin-top: 24px; }
+
+/* ==========================================================================
+   ADMIN COMPLAINT CARD - VOTE BADGE, NEW BADGE, SORT BAR
+   ========================================================================== */
+
+/* Sort bar */
+.admin-sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Right column: vote + priority + actions */
+.acr-right-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  min-width: 110px;
+}
+
+/* Vote badge */
+.acr-vote-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(59,130,246,0.12);
+  border: 1px solid rgba(59,130,246,0.3);
+  border-radius: 10px;
+  padding: 10px 16px;
+  color: #60a5fa;
+  font-size: 1.1rem;
+  min-width: 80px;
+  text-align: center;
+  gap: 2px;
+}
+.acr-vote-num {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+}
+.acr-vote-label {
+  font-size: 0.65rem;
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Priority score */
+.acr-priority-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #f59e0b;
+  gap: 1px;
+}
+.acr-priority-score small {
+  font-size: 0.65rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* NEW badge on fresh complaints */
+.acr-new-badge {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #000;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 5px;
+  letter-spacing: 0.05em;
+  animation: pulseBadge 1.5s infinite;
+}
+@keyframes pulseBadge {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
