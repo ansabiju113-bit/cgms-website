@@ -6,7 +6,7 @@
 // ==========================================
 // ADMIN SECURITY CONFIGURATION
 // ==========================================
-const ADMIN_PASSWORD = "admin@cgms2024"; // Change this to your desired password
+const ADMIN_PASSWORD = "admin"; // Change this to your desired password
 const ADMIN_MAX_ATTEMPTS = 3;
 
 // ==========================================
