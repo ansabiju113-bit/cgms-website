@@ -339,9 +339,40 @@
               </div>
             </div>
           </div>
-        </div>
-      </section>
 
+
+        <!-- ====== ADMIN COMPLAINT MANAGEMENT ====== -->
+        <div class="glass-panel mt-4">
+          <div class="panel-header flex-between">
+            <h3><i class="fa-solid fa-clipboard-check"></i> Complaint Review &amp; Management</h3>
+            <span class="info-pill"><i class="fa-solid fa-shield-halved"></i> Admin Override Access</span>
+          </div>
+          <!-- Stats Row -->
+          <div class="admin-complaint-stats" id="admin-complaint-stats"></div>
+          <!-- Filter Tabs -->
+          <div class="admin-filter-tabs">
+            <button class="admin-tab-btn active" onclick="setAdminFilter('ALL', this)"><i class="fa-solid fa-list"></i> All</button>
+            <button class="admin-tab-btn" onclick="setAdminFilter('SUBMITTED', this)"><i class="fa-solid fa-inbox"></i> Pending</button>
+            <button class="admin-tab-btn" onclick="setAdminFilter('UNDER_WARD_REVIEW', this)"><i class="fa-solid fa-magnifying-glass"></i> Under Review</button>
+            <button class="admin-tab-btn" onclick="setAdminFilter('APPROVED', this)"><i class="fa-solid fa-check-circle"></i> Approved</button>
+            <button class="admin-tab-btn" onclick="setAdminFilter('IN_PROGRESS', this)"><i class="fa-solid fa-gears"></i> In Progress</button>
+            <button class="admin-tab-btn" onclick="setAdminFilter('REJECTED', this)"><i class="fa-solid fa-circle-xmark"></i> Rejected</button>
+            <button class="admin-tab-btn" onclick="setAdminFilter('RESOLVED', this)"><i class="fa-solid fa-trophy"></i> Resolved</button>
+          </div>
+          <!-- Sort Control -->
+          <div class="admin-sort-bar">
+            <span><i class="fa-solid fa-arrow-up-wide-short"></i> Sort by:</span>
+            <select id="admin-sort-select" class="form-select" onchange="renderAdminComplaintList()" style="width:auto; padding:6px 12px; font-size:0.8rem;">
+              <option value="newest">Newest First</option>
+              <option value="votes">Most Voted</option>
+              <option value="priority">Highest Priority</option>
+            </select>
+          </div>
+          <!-- Complaint List -->
+          <div id="admin-complaints-list" class="admin-complaints-list"></div>
+        </div>
+
+      </section>
     </main>
 
     <!-- ==================== MODALS ==================== -->
@@ -474,6 +505,63 @@
           </div>
           <pre class="code-block"><code id="java-code-content">Loading Java Source...</code></pre>
         </div>
+      </div>
+    </div>
+
+    <!-- 5. ADMIN LOGIN SECURITY MODAL -->
+    <div id="modal-admin-login" class="modal-overlay hidden admin-login-overlay">
+      <div class="modal-card admin-login-card">
+        <!-- Lock Icon Header -->
+        <div class="admin-login-header">
+          <div class="admin-lock-icon">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <h3>Admin Access Required</h3>
+          <p>This area is restricted to authorized administrators only. Enter your credentials to proceed.</p>
+          <button id="btn-admin-login-close" class="admin-close-btn" title="Cancel">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <form id="form-admin-login" class="admin-login-body" autocomplete="off">
+          <!-- Info badge -->
+          <div class="admin-info-badge">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>Access is logged and monitored. Unauthorized attempts will be blocked.</span>
+          </div>
+
+          <!-- Password Field -->
+          <div class="admin-field-group">
+            <label for="admin-password-input">
+              <i class="fa-solid fa-key"></i> Admin Password
+            </label>
+            <div class="admin-password-wrapper">
+              <input
+                type="password"
+                id="admin-password-input"
+                placeholder="Enter admin password..."
+                autocomplete="new-password"
+                required
+              />
+              <button type="button" id="toggle-admin-password" class="toggle-pw-btn" title="Show/Hide Password">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Error Message -->
+          <div id="admin-login-error" class="admin-error-msg hidden"></div>
+
+          <!-- Action Buttons -->
+          <div class="admin-login-footer">
+            <button type="button" id="btn-admin-login-cancel" class="btn-secondary" onclick="document.getElementById('modal-admin-login').classList.add('hidden')">
+              <i class="fa-solid fa-arrow-left"></i> Cancel
+            </button>
+            <button type="submit" id="btn-admin-login-submit" class="btn-admin-submit">
+              <i class="fa-solid fa-unlock-keyhole"></i> Verify & Enter Admin
+            </button>
+          </div>
+        </form>
       </div>
     </div>
 
