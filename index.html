@@ -94,8 +94,8 @@
             <span id="citizen-display-name" class="user-name">Guest</span>
             <span id="citizen-display-email" class="user-role-tag">Not logged in</span>
           </div>
-          <button class="citizen-logout-btn" onclick="logoutCitizen()" title="Logout">
-            <i class="fa-solid fa-right-from-bracket"></i>
+          <button id="btn-citizen-logout" class="btn-citizen-logout" onclick="logoutCitizen()" title="Logout from account">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> <span>Logout</span>
           </button>
         </div>
 
@@ -788,10 +788,31 @@
       // ============================================================
       // LOGOUT
       // ============================================================
+      window._logoutCitizenBridge = function() { logoutCitizen(); };
       function logoutCitizen() {
-        auth.signOut().then(function() {
-          if (typeof showToast === "function") showToast("You have been logged out.", "info");
-        });
+        if (typeof auth !== "undefined" && auth) {
+          auth.signOut().then(function() {
+            window._loggedInCitizen = null;
+            var loginBtn = document.getElementById("btn-citizen-login");
+            var card     = document.getElementById("citizen-profile-card");
+            if (loginBtn) loginBtn.style.display = "flex";
+            if (card) card.style.display = "none";
+            if (typeof showToast === "function") showToast("You have been logged out.", "info");
+          }).catch(function(err) {
+            console.error("Sign out error:", err);
+            window._loggedInCitizen = null;
+            var loginBtn = document.getElementById("btn-citizen-login");
+            var card     = document.getElementById("citizen-profile-card");
+            if (loginBtn) loginBtn.style.display = "flex";
+            if (card) card.style.display = "none";
+          });
+        } else {
+          window._loggedInCitizen = null;
+          var loginBtn = document.getElementById("btn-citizen-login");
+          var card     = document.getElementById("citizen-profile-card");
+          if (loginBtn) loginBtn.style.display = "flex";
+          if (card) card.style.display = "none";
+        }
       }
 
       // ============================================================
