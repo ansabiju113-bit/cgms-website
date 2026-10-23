@@ -1,34 +1,91 @@
 package com.jansuraksha.model;
 
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Core Domain Entity representing a Grievance Ticket.
+ * SQL Relational Entity mapped to 'complaints' table.
  */
+@Entity
+@Table(name = "complaints")
 public class Complaint {
+
+    @Id
+    @Column(name = "id", length = 32, nullable = false)
     private String id;
+
+    @Column(name = "title", nullable = false, length = 255)
     private String title;
+
+    @Column(name = "category", nullable = false, length = 64)
     private String category;
+
+    @Lob
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
+
+    @Column(name = "location", length = 255)
     private String location;
+
+    @Column(name = "latitude")
     private double lat;
+
+    @Column(name = "longitude")
     private double lng;
+
+    @Column(name = "ward_id", length = 32)
     private String wardId;
+
+    @Column(name = "ward_name", length = 128)
     private String wardName;
+
+    @Column(name = "citizen_id", length = 64)
     private String citizenId;
+
+    @Column(name = "citizen_name", length = 128)
     private String citizenName;
+
+    @Column(name = "citizen_email", length = 128)
     private String citizenEmail;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "urgency", length = 20)
     private Urgency urgency;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", length = 32)
     private ComplaintStatus status;
+
+    @Column(name = "upvotes")
     private int upvotes;
+
+    @Column(name = "assigned_department", length = 128)
     private String assignedDepartment;
+
+    @Lob
+    @Column(name = "ward_remarks", columnDefinition = "TEXT")
     private String wardRemarks;
+
+    @Lob
+    @Column(name = "photo_url", columnDefinition = "CLOB")
     private String photoUrl;
+
+    @Column(name = "created_at", length = 32)
     private String createdAt;
+
+    @Column(name = "is_merged")
     private boolean isMerged;
+
+    @Column(name = "master_complaint_id", length = 32)
     private String masterComplaintId;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "complaint_children", joinColumns = @JoinColumn(name = "complaint_id"))
+    @Column(name = "child_id", length = 32)
     private List<String> childIds = new ArrayList<>();
+
+    @Column(name = "priority_score")
     private double priorityScore;
 
     public Complaint() {}
@@ -61,7 +118,6 @@ public class Complaint {
         this.isMerged = false;
     }
 
-    // Getters and Setters
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
