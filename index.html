@@ -149,11 +149,16 @@
               <option value="PUBLIC">Public Feed (Community Upvote)</option>
               <option value="MY_COMPLAINTS">My Submitted Grievances</option>
             </select>
+
+            <select id="citizen-group-mode" class="form-select">
+              <option value="GROUPED">📂 Grouped by Category</option>
+              <option value="FLAT">📋 Chronological Feed</option>
+            </select>
           </div>
         </div>
 
         <!-- Complaint Feed Grid -->
-        <div id="citizen-complaints-grid" class="complaints-grid">
+        <div id="citizen-complaints-grid" class="citizen-feed-container">
           <!-- Dynamically Rendered Complaint Cards -->
         </div>
       </section>
@@ -410,6 +415,8 @@
             <label>Grievance Title <span class="req">*</span></label>
             <input type="text" id="input-title" required placeholder="e.g. Major Water Leakage on Temple Street" />
           </div>
+          <!-- Real-Time Similar Complaint Suggestion Box -->
+          <div id="submit-similar-box" class="submit-similar-box hidden"></div>
 
           <div class="form-row">
             <div class="form-group">
