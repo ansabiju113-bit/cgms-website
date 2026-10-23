@@ -1,13 +1,30 @@
 package com.jansuraksha.model;
 
+import jakarta.persistence.*;
+
 /**
- * Abstract Base Class demonstrating Encapsulation & Polymorphism.
+ * SQL Relational Entity mapped to 'users' table using Single-Table Inheritance.
  */
+@Entity
+@Table(name = "users")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "user_type", discriminatorType = DiscriminatorType.STRING)
 public abstract class User {
+
+    @Id
+    @Column(name = "id", length = 64, nullable = false)
     private String id;
+
+    @Column(name = "name", nullable = false, length = 128)
     private String name;
+
+    @Column(name = "email", length = 128)
     private String email;
+
+    @Column(name = "role", nullable = false, length = 64)
     private String role;
+
+    @Column(name = "avatar", length = 512)
     private String avatar;
 
     public User() {}
