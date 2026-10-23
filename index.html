@@ -797,32 +797,34 @@
       // ============================================================
       // REALTIME AUTH STATE - updates header automatically
       // ============================================================
-      if (auth) { auth.onAuthStateChanged(function(user) {
-        var loginBtn = document.getElementById("btn-citizen-login");
-        var card     = document.getElementById("citizen-profile-card");
-        if (!loginBtn || !card) return;
+      if (auth) {
+        auth.onAuthStateChanged(function(user) {
+          var loginBtn = document.getElementById("btn-citizen-login");
+          var card     = document.getElementById("citizen-profile-card");
+          if (!loginBtn || !card) return;
 
-        if (user) {
-          var name     = user.displayName || user.email;
-          var initials = name.split(" ").map(function(w){ return w.charAt(0); }).join("").toUpperCase().substring(0, 2);
+          if (user) {
+            var name     = user.displayName || user.email;
+            var initials = name.split(" ").map(function(w){ return w.charAt(0); }).join("").toUpperCase().substring(0, 2);
 
-          loginBtn.style.display = "none";
-          card.style.display     = "flex";
-          var av = document.getElementById("citizen-avatar-circle");
-          var nm = document.getElementById("citizen-display-name");
-          var em = document.getElementById("citizen-display-email");
-          if (av) av.textContent = initials;
-          if (nm) nm.textContent = name;
-          if (em) em.textContent = user.email;
+            loginBtn.style.display = "none";
+            card.style.display     = "flex";
+            var av = document.getElementById("citizen-avatar-circle");
+            var nm = document.getElementById("citizen-display-name");
+            var em = document.getElementById("citizen-display-email");
+            if (av) av.textContent = initials;
+            if (nm) nm.textContent = name;
+            if (em) em.textContent = user.email;
 
-          // Make available to app.js for complaint submission
-          window._loggedInCitizen = { id: user.uid, username: name, email: user.email, initials: initials };
-        } else {
-          loginBtn.style.display = "flex";
-          card.style.display     = "none";
-          window._loggedInCitizen = null;
-        }
-      });
+            // Make available to app.js for complaint submission
+            window._loggedInCitizen = { id: user.uid, username: name, email: user.email, initials: initials };
+          } else {
+            loginBtn.style.display = "flex";
+            card.style.display     = "none";
+            window._loggedInCitizen = null;
+          }
+        });
+      }
 
       // ============================================================
       // BRIDGE - so app.js complaint submission works with Firebase user
