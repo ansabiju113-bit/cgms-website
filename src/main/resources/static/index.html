@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jan-Suraksha | Transparent Citizen Grievance Management System</title>
+  <!-- Google Fonts & FontAwesome / Lucide CDN -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app" class="app-container">
+    <!-- Top Global Banner & Live Ticker -->
+    <div class="top-announcement">
+      <div class="announcement-content">
+        <span class="pulse-badge"><i class="fa-solid fa-signal"></i> REAL-TIME DISPATCH</span>
+        <span class="ticker-text">Smart Panchayath Governance Active • AI Duplicate Merging Enabled • 100% Public Transparency</span>
+      </div>
+      <div class="quick-stats">
+        <span><i class="fa-solid fa-users"></i> 14,250 Citizens</span>
+        <span><i class="fa-solid fa-check-circle"></i> 94.2% Resolution Rate</span>
+      </div>
+    </div>
+
+    <!-- Main Navigation Header -->
+    <header class="main-header">
+      <div class="header-brand">
+        <div class="logo-icon">
+          <i class="fa-solid fa-building-columns"></i>
+        </div>
+        <div class="logo-text">
+          <h1>JAN-SURAKSHA <span class="badge-v2">v2.4</span></h1>
+          <p>Transparent Citizen Grievance & Smart Panchayath System</p>
+        </div>
+      </div>
+
+      <!-- Role Switcher Control Bar -->
+      <div class="role-switcher-container">
+        <span class="role-label"><i class="fa-solid fa-user-gear"></i> Active Role:</span>
+        <div class="role-buttons">
+          <button class="role-btn active" data-role="CITIZEN">
+            <i class="fa-solid fa-user"></i> Citizen
+          </button>
+          <button class="role-btn" data-role="WARD_MEMBER">
+            <i class="fa-solid fa-user-shield"></i> Ward Member
+          </button>
+          <button class="role-btn" data-role="PRESIDENT">
+            <i class="fa-solid fa-award"></i> President
+          </button>
+          <button class="role-btn" data-role="ADMIN">
+            <i class="fa-solid fa-sliders"></i> Admin
+          </button>
+        </div>
+      </div>
+
+      <!-- User Info & Action Center -->
+      <div class="header-actions">
+        <!-- Java OOP Inspector Button -->
+        <button id="btn-view-java" class="btn-secondary glow-btn" title="View Java OOP Code & Architecture">
+          <i class="fa-brands fa-java"></i> Java OOP Code
+        </button>
+
+        <!-- Notification Bell -->
+        <div class="notification-wrapper">
+          <button id="btn-notifications" class="icon-btn">
+            <i class="fa-solid fa-bell"></i>
+            <span id="notification-count" class="badge-count">3</span>
+          </button>
+          
+          <!-- Dropdown Drawer -->
+          <div id="notification-drawer" class="notification-drawer hidden">
+            <div class="drawer-header">
+              <h3><i class="fa-solid fa-bell"></i> Live System Notifications</h3>
+              <button id="btn-clear-notifications" class="text-btn">Clear all</button>
+            </div>
+            <div id="notification-list" class="notification-list">
+              <!-- Dynamically Populated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Login Button (shown when not logged in as citizen) -->
+        <button id="btn-citizen-login" class="btn-citizen-login" onclick="openAuthModal('login')">
+          <i class="fa-solid fa-right-to-bracket"></i> Login / Register
+        </button>
+
+        <!-- Citizen Profile (shown when logged in) -->
+        <div id="citizen-profile-card" class="citizen-profile-card" style="display: none;">
+          <div class="citizen-avatar-circle" id="citizen-avatar-circle">?</div>
+          <div class="user-details">
+            <span id="citizen-display-name" class="user-name">Guest</span>
+            <span id="citizen-display-email" class="user-role-tag">Not logged in</span>
+          </div>
+          <button id="btn-citizen-logout" class="btn-citizen-logout" onclick="logoutCitizen()" title="Logout from account">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> <span>Logout</span>
+          </button>
+        </div>
+
+        
+      </div>
+    </header>
+
+    <!-- Main Content Body -->
+    <main class="main-body">
+
+      <!-- ==================== 1. CITIZEN MODULE ==================== -->
+      <section id="module-citizen" class="portal-module active">
+        <!-- Citizen Hero Banner -->
+        <div class="portal-hero">
+          <div class="hero-text">
+            <h2>Welcome to Citizen Governance Portal</h2>
+            <p>File grievances, upload proof photos, track real-time resolution stages, and upvote neighborhood issues to prioritize public action.</p>
+          </div>
+          <div class="hero-cta">
+            <button id="btn-open-submit-modal" class="btn-primary-gradient" onclick="openSubmitModal()">
+              <i class="fa-solid fa-plus-circle"></i> File New Grievance
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="filter-bar">
+          <div class="search-input-group">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="citizen-search" placeholder="Search grievances by title, category, or location..." />
+          </div>
+
+          <div class="filter-controls">
+            <select id="citizen-category-filter" class="form-select">
+              <option value="ALL">All Categories</option>
+              <option value="Road Damage">Road Damage</option>
+              <option value="Streetlight">Streetlight</option>
+              <option value="Water Supply">Water Supply</option>
+              <option value="Drainage">Drainage</option>
+              <option value="Garbage">Garbage</option>
+              <option value="Electricity">Electricity</option>
+              <option value="Sewage">Sewage</option>
+              <option value="Public Toilet">Public Toilet</option>
+              <option value="Tree Removal">Tree Removal</option>
+              <option value="Others">Others</option>
+            </select>
+
+            <select id="citizen-tab-filter" class="form-select">
+              <option value="PUBLIC">Public Feed (Community Upvote)</option>
+              <option value="MY_COMPLAINTS">My Submitted Grievances</option>
+            </select>
+
+            <select id="citizen-group-mode" class="form-select">
+              <option value="GROUPED">📂 Grouped by Category</option>
+              <option value="FLAT">📋 Chronological Feed</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Complaint Feed Grid -->
+        <div id="citizen-complaints-grid" class="citizen-feed-container">
+          <!-- Dynamically Rendered Complaint Cards -->
+        </div>
+      </section>
+
+      <!-- ==================== 2. WARD MEMBER MODULE ==================== -->
+      <section id="module-ward-member" class="portal-module hidden">
+        <div class="module-header-banner ward-banner">
+          <div>
+            <h2><i class="fa-solid fa-user-shield"></i> Ward Member Review & Field Inspection Portal</h2>
+            <p>Review incoming ward grievances, conduct local physical assessments, approve or reject complaints, and append field inspection remarks.</p>
+          </div>
+          <div class="ward-badge">
+            <span class="label">Assigned Ward:</span>
+            <span class="ward-title"><i class="fa-solid fa-location-dot"></i> Ward 1 - Green Valley</span>
+          </div>
+        </div>
+
+        <div class="stats-overview-row">
+          <div class="stat-card yellow">
+            <div class="stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+            <div class="stat-info">
+              <span id="ward-pending-count" class="stat-num">0</span>
+              <span class="stat-label">Pending Review</span>
+            </div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="stat-info">
+              <span id="ward-approved-count" class="stat-num">0</span>
+              <span class="stat-label">Approved & Forwarded</span>
+            </div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-icon"><i class="fa-solid fa-circle-xmark"></i></div>
+            <div class="stat-info">
+              <span id="ward-rejected-count" class="stat-num">0</span>
+              <span class="stat-label">Rejected Grievances</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ward Complaints Table / Feed -->
+        <div class="glass-panel mt-4">
+          <div class="panel-header">
+            <h3><i class="fa-solid fa-clipboard-list"></i> Ward Grievance Assessment Queue</h3>
+          </div>
+          <div id="ward-complaints-list" class="ward-complaints-list">
+            <!-- Dynamically Rendered -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 3. PANCHAYATH PRESIDENT MODULE ==================== -->
+      <section id="module-president" class="portal-module hidden">
+        <div class="module-header-banner president-banner">
+          <div>
+            <h2><i class="fa-solid fa-award"></i> Panchayath Executive Dashboard</h2>
+            <p>Monitor all Panchayath Wards, review smart priority scores, assign municipal departments, and generate analytical compliance reports.</p>
+          </div>
+          <div class="header-action-btns">
+            <button id="btn-run-ai-merger" class="btn-ai">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Run AI Similarity Scanner
+            </button>
+            <button id="btn-generate-report" class="btn-primary">
+              <i class="fa-solid fa-file-export"></i> Export Official Report
+            </button>
+          </div>
+        </div>
+
+        <!-- Executive Metrics Row -->
+        <div class="stats-overview-row">
+          <div class="stat-card blue">
+            <div class="stat-icon"><i class="fa-solid fa-folder-open"></i></div>
+            <div class="stat-info">
+              <span id="pres-total-count" class="stat-num">0</span>
+              <span class="stat-label">Total Panchayath Issues</span>
+            </div>
+          </div>
+          <div class="stat-card purple">
+            <div class="stat-icon"><i class="fa-solid fa-fire"></i></div>
+            <div class="stat-info">
+              <span id="pres-critical-count" class="stat-num">0</span>
+              <span class="stat-label">High Priority / Upvoted</span>
+            </div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-icon"><i class="fa-solid fa-gears"></i></div>
+            <div class="stat-info">
+              <span id="pres-inprogress-count" class="stat-num">0</span>
+              <span class="stat-label">In Department Action</span>
+            </div>
+          </div>
+          <div class="stat-card teal">
+            <div class="stat-icon"><i class="fa-solid fa-layer-group"></i></div>
+            <div class="stat-info">
+              <span id="pres-merged-count" class="stat-num">0</span>
+              <span class="stat-label">AI Merged Duplicates</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- President Priority Matrix & Department Assignment Table -->
+        <div class="glass-panel mt-4">
+          <div class="panel-header flex-between">
+            <h3><i class="fa-solid fa-arrow-down-short-wide"></i> Smart Prioritized Complaints & Department Allocation</h3>
+            <span class="info-pill"><i class="fa-solid fa-bolt"></i> Ordered by Public Impact Score</span>
+          </div>
+          <div class="table-responsive">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Title & Category</th>
+                  <th>Ward</th>
+                  <th>Priority Score</th>
+                  <th>Community Upvotes</th>
+                  <th>Current Status</th>
+                  <th>Assigned Department</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="president-table-body">
+                <!-- Dynamically Rendered -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== 4. ADMINISTRATOR MODULE ==================== -->
+      <section id="module-admin" class="portal-module hidden">
+        <div class="module-header-banner admin-banner">
+          <div>
+            <h2><i class="fa-solid fa-sliders"></i> System Administrator Control Hub</h2>
+            <p>Manage Panchayath users, wards, department routing, grievance categories, AI duplicate thresholds, and master audit metrics.</p>
+          </div>
+        </div>
+
+        <!-- Admin Control Grid -->
+        <div class="admin-grid">
+          <!-- User Management Panel -->
+          <div class="glass-panel">
+            <div class="panel-header">
+              <h3><i class="fa-solid fa-users-gear"></i> System User Management</h3>
+            </div>
+            <div class="panel-body">
+              <div id="admin-user-list" class="admin-list-box">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Ward & Department Config -->
+          <div class="glass-panel">
+            <div class="panel-header">
+              <h3><i class="fa-solid fa-network-wired"></i> Wards & Department Directory</h3>
+            </div>
+            <div class="panel-body">
+              <div id="admin-dept-list" class="admin-list-box">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Categories & AI Thresholds -->
+          <div class="glass-panel full-width">
+            <div class="panel-header">
+              <h3><i class="fa-solid fa-microchip"></i> AI Similarity Engine Settings & Category Configuration</h3>
+            </div>
+            <div class="panel-body ai-config-form">
+              <div class="config-row">
+                <label>Text Similarity Threshold (Jaccard Match %):</label>
+                <div class="range-container">
+                  <input type="range" id="ai-text-threshold" min="30" max="90" value="50" oninput="document.getElementById('text-thresh-val').innerText = this.value + '%'" />
+                  <span id="text-thresh-val" class="range-val">50%</span>
+                </div>
+              </div>
+              <div class="config-row">
+                <label>Geographic Proximity Radius (Meters):</label>
+                <div class="range-container">
+                  <input type="range" id="ai-geo-radius" min="100" max="2000" step="50" value="500" oninput="document.getElementById('geo-thresh-val').innerText = this.value + 'm'" />
+                  <span id="geo-thresh-val" class="range-val">500m</span>
+                </div>
+              </div>
+              <div class="categories-tag-cloud">
+                <span class="tag">Road Damage</span>
+                <span class="tag">Streetlight</span>
+                <span class="tag">Water Supply</span>
+                <span class="tag">Drainage</span>
+                <span class="tag">Garbage</span>
+                <span class="tag">Electricity</span>
+                <span class="tag">Sewage</span>
+                <span class="tag">Public Toilet</span>
+                <span class="tag">Tree Removal</span>
+                <span class="tag">Others</span>
+              </div>
+            </div>
+          </div>
+
+
+        <!-- ====== ADMIN COMPLAINT MANAGEMENT ====== -->
+        <div class="glass-panel mt-4">
+          <div class="panel-header flex-between">
+            <h3><i class="fa-solid fa-clipboard-check"></i> Complaint Review &amp; Management</h3>
+            <span class="info-pill"><i class="fa-solid fa-shield-halved"></i> Admin Override Access</span>
+          </div>
+          <!-- Stats Row -->
+          <div class="admin-complaint-stats" id="admin-complaint-stats"></div>
+          <!-- Filter Tabs -->
+          <div class="admin-filter-tabs">
+            <button class="admin-tab-btn active" onclick="setAdminFilter('ALL', this)"><i class="fa-solid fa-list"></i> All</button>
+            <button class="admin-tab-btn" onclick="setAdminFilter('SUBMITTED', this)"><i class="fa-solid fa-inbox"></i> Pending</button>
+            <button class="admin-tab-btn" onclick="setAdminFilter('UNDER_WARD_REVIEW', this)"><i class="fa-solid fa-magnifying-glass"></i> Under Review</button>
+            <button class="admin-tab-btn" onclick="setAdminFilter('APPROVED', this)"><i class="fa-solid fa-check-circle"></i> Approved</button>
+            <button class="admin-tab-btn" onclick="setAdminFilter('IN_PROGRESS', this)"><i class="fa-solid fa-gears"></i> In Progress</button>
+            <button class="admin-tab-btn" onclick="setAdminFilter('REJECTED', this)"><i class="fa-solid fa-circle-xmark"></i> Rejected</button>
+            <button class="admin-tab-btn" onclick="setAdminFilter('RESOLVED', this)"><i class="fa-solid fa-trophy"></i> Resolved</button>
+          </div>
+          <!-- Sort Control -->
+          <div class="admin-sort-bar">
+            <span><i class="fa-solid fa-arrow-up-wide-short"></i> Sort by:</span>
+            <select id="admin-sort-select" class="form-select" onchange="renderAdminComplaintList()" style="width:auto; padding:6px 12px; font-size:0.8rem;">
+              <option value="newest">Newest First</option>
+              <option value="votes">Most Voted</option>
+              <option value="priority">Highest Priority</option>
+            </select>
+          </div>
+          <!-- Complaint List -->
+          <div id="admin-complaints-list" class="admin-complaints-list"></div>
+        </div>
+
+      </section>
+    </main>
+
+    <!-- ==================== MODALS ==================== -->
+
+    <!-- 1. SUBMIT GRIEVANCE MODAL -->
+    <div id="modal-submit" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-file-pen"></i> Submit Transparent Citizen Grievance</h3>
+          <button class="close-modal-btn">&times;</button>
+        </div>
+        <form id="form-submit-complaint" class="modal-body">
+          <!-- Citizen Account Link Badge -->
+          <div id="submit-citizen-badge" style="padding: 10px 14px; margin-bottom: 16px; border-radius: 10px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.25); display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-user-circle" style="color: #818cf8; font-size: 1.15rem;"></i>
+              <span id="submit-citizen-text" style="color: #f1f5f9;">Posting as: <span style="color:#f87171;">Guest (Not logged in)</span></span>
+            </div>
+            <button type="button" id="submit-citizen-btn" onclick="openAuthModal('login')" style="background: rgba(99,102,241,0.2); border: 1px solid rgba(99,102,241,0.4); color: #818cf8; padding: 5px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer;">Login / Register</button>
+          </div>
+          <div class="form-group">
+            <label>Grievance Title <span class="req">*</span></label>
+            <input type="text" id="input-title" required placeholder="e.g. Major Water Leakage on Temple Street" />
+          </div>
+          <!-- Real-Time Similar Complaint Suggestion Box -->
+          <div id="submit-similar-box" class="submit-similar-box hidden"></div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Category <span class="req">*</span></label>
+              <select id="input-category" class="form-select" required>
+                <option value="Road Damage">Road Damage</option>
+                <option value="Streetlight">Streetlight</option>
+                <option value="Water Supply">Water Supply</option>
+                <option value="Drainage">Drainage</option>
+                <option value="Garbage">Garbage</option>
+                <option value="Electricity">Electricity</option>
+                <option value="Sewage">Sewage</option>
+                <option value="Public Toilet">Public Toilet</option>
+                <option value="Tree Removal">Tree Removal</option>
+                <option value="Others">Others</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Ward <span class="req">*</span></label>
+              <select id="input-ward" class="form-select" required>
+                <option value="W1">Ward 1 - Green Valley</option>
+                <option value="W2">Ward 2 - Lakeview</option>
+                <option value="W3">Ward 3 - Market Square</option>
+                <option value="W4">Ward 4 - Hill Top</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Exact Location / Landmark <span class="req">*</span></label>
+              <input type="text" id="input-location" required placeholder="e.g. Near Bus Stand Entrance" />
+            </div>
+
+            <div class="form-group">
+              <label>Urgency Level <span class="req">*</span></label>
+              <select id="input-urgency" class="form-select" required>
+                <option value="LOW">Low (Routine maintenance)</option>
+                <option value="MEDIUM" selected>Medium (Standard priority)</option>
+                <option value="HIGH">High (Needs immediate attention)</option>
+                <option value="CRITICAL">Critical (Hazardous/Emergency)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Detailed Description <span class="req">*</span></label>
+            <textarea id="input-description" rows="3" required placeholder="Provide exact details of the grievance to help authorities assess the issue..."></textarea>
+          </div>
+
+          <!-- Photo Upload Preview -->
+          <div class="form-group">
+            <label>Upload Photo Proof</label>
+            <div class="photo-upload-zone" id="photo-drop-zone">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>Click to select sample photo or upload photo proof</span>
+              <input type="file" id="input-photo" accept="image/*" class="hidden-file-input" />
+            </div>
+            <div id="photo-preview-container" class="photo-preview-container hidden">
+              <img id="photo-preview-img" src="" alt="Preview" />
+              <button type="button" id="btn-remove-photo" class="remove-photo-btn"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary close-modal-btn">Cancel</button>
+            <button type="submit" class="btn-primary"><i class="fa-solid fa-paper-plane"></i> Submit Grievance</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 2. LIVE STATUS TRACKING TIMELINE MODAL -->
+    <div id="modal-tracking" class="modal-overlay hidden">
+      <div class="modal-card max-w-xl">
+        <div class="modal-header">
+          <h3><i class="fa-solid fa-clock-rotate-left"></i> Live Real-Time Grievance Timeline</h3>
+          <button class="close-modal-btn">&times;</button>
+        </div>
+        <div class="modal-body" id="tracking-modal-body">
+          <!-- Dynamically populated timeline -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. AI COMPLAINT MERGING MODAL -->
+    <div id="modal-ai-merge" class="modal-overlay hidden">
+      <div class="modal-card max-w-2xl">
+        <div class="modal-header ai-modal-header">
+          <h3><i class="fa-solid fa-wand-magic-sparkles"></i> AI Intelligent Duplicate Detection & Consolidation</h3>
+          <button class="close-modal-btn">&times;</button>
+        </div>
+        <div class="modal-body" id="ai-merge-modal-body">
+          <!-- Dynamically populated AI results -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. JAVA OOP ARCHITECTURE CODE INSPECTOR MODAL -->
+    <div id="modal-java-code" class="modal-overlay hidden">
+      <div class="modal-card max-w-4xl">
+        <div class="modal-header java-modal-header">
+          <h3><i class="fa-brands fa-java"></i> Java Object-Oriented Architecture & Domain Models</h3>
+          <button class="close-modal-btn">&times;</button>
+        </div>
+        <div class="modal-body java-code-body">
+          <div class="java-tabs">
+            <button class="java-tab active" data-file="User.java">User.java (Abstract)</button>
+            <button class="java-tab" data-file="Complaint.java">Complaint.java</button>
+            <button class="java-tab" data-file="ComplaintService.java">ComplaintService.java</button>
+            <button class="java-tab" data-file="ComplaintController.java">ComplaintController.java</button>
+            <button class="java-tab" data-file="AIMergingEngine.java">AIMergingEngine.java</button>
+            <button class="java-tab" data-file="Main.java">Main.java</button>
+          </div>
+          <pre class="code-block"><code id="java-code-content">Loading Java Source...</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. ADMIN LOGIN SECURITY MODAL -->
+    <div id="modal-admin-login" class="modal-overlay hidden admin-login-overlay">
+      <div class="modal-card admin-login-card">
+        <!-- Lock Icon Header -->
+        <div class="admin-login-header">
+          <div class="admin-lock-icon">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <h3>Admin Access Required</h3>
+          <p>This area is restricted to authorized administrators only. Enter your credentials to proceed.</p>
+          <button id="btn-admin-login-close" class="admin-close-btn" title="Cancel">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <form id="form-admin-login" class="admin-login-body" autocomplete="off">
+          <!-- Info badge -->
+          <div class="admin-info-badge">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>Access is logged and monitored. Unauthorized attempts will be blocked.</span>
+          </div>
+
+          <!-- Password Field -->
+          <div class="admin-field-group">
+            <label for="admin-password-input">
+              <i class="fa-solid fa-key"></i> Admin Password
+            </label>
+            <div class="admin-password-wrapper">
+              <input
+                type="password"
+                id="admin-password-input"
+                placeholder="Enter admin password..."
+                autocomplete="new-password"
+                required
+              />
+              <button type="button" id="toggle-admin-password" class="toggle-pw-btn" title="Show/Hide Password">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Error Message -->
+          <div id="admin-login-error" class="admin-error-msg hidden"></div>
+
+          <!-- Action Buttons -->
+          <div class="admin-login-footer">
+            <button type="button" id="btn-admin-login-cancel" class="btn-secondary" onclick="document.getElementById('modal-admin-login').classList.add('hidden')">
+              <i class="fa-solid fa-arrow-left"></i> Cancel
+            </button>
+            <button type="submit" id="btn-admin-login-submit" class="btn-admin-submit">
+              <i class="fa-solid fa-unlock-keyhole"></i> Verify & Enter Admin
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ====== CITIZEN LOGIN / REGISTER MODAL ====== -->
+    <div id="auth-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:99999;align-items:center;justify-content:center;">
+      <div style="background:linear-gradient(145deg,#1e293b,#0f172a);border:1px solid rgba(99,102,241,0.35);border-radius:20px;width:92%;max-width:400px;max-height:90vh;overflow-y:auto;box-shadow:0 30px 70px rgba(0,0,0,0.7);">
+
+        <!-- Tab bar -->
+        <div style="display:flex;align-items:center;background:rgba(0,0,0,0.3);border-bottom:1px solid rgba(255,255,255,0.07);padding:6px 6px 0;">
+          <button id="auth-tab-login" onclick="authTab('login')" style="flex:1;padding:12px;background:rgba(99,102,241,0.18);border:none;border-bottom:2px solid #6366f1;color:#818cf8;font-size:0.85rem;font-weight:700;cursor:pointer;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;gap:6px;">
+            &#128274; Login
+          </button>
+          <button id="auth-tab-reg" onclick="authTab('reg')" style="flex:1;padding:12px;background:transparent;border:none;border-bottom:2px solid transparent;color:#64748b;font-size:0.85rem;font-weight:700;cursor:pointer;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;gap:6px;">
+            &#128100; Register
+          </button>
+          <button onclick="closeAuthModal()" style="background:rgba(255,255,255,0.07);border:none;color:#94a3b8;width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;margin-bottom:6px;">&#10005;</button>
+        </div>
+
+        <!-- LOGIN FORM -->
+        <div id="auth-form-login" style="padding:28px;">
+          <div style="text-align:center;margin-bottom:22px;">
+            <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:1.5rem;color:#fff;box-shadow:0 8px 24px rgba(99,102,241,0.45);">&#128274;</div>
+            <h3 style="color:#f1f5f9;font-size:1.25rem;font-weight:800;margin:0 0 4px;">Welcome Back</h3>
+            <p style="color:#64748b;font-size:0.8rem;margin:0;">Login to post and track your complaints</p>
+          </div>
+          <label style="display:block;color:#94a3b8;font-size:0.78rem;font-weight:700;margin-bottom:6px;">&#128231; Email Address</label>
+          <input id="li-email" type="email" placeholder="your@gmail.com" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:12px 14px;color:#f1f5f9;font-size:0.9rem;box-sizing:border-box;outline:none;margin-bottom:14px;" />
+          <label style="display:block;color:#94a3b8;font-size:0.78rem;font-weight:700;margin-bottom:6px;">&#128274; Password</label>
+          <div style="position:relative;margin-bottom:6px;">
+            <input id="li-pass" type="password" placeholder="Enter your password" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:12px 44px 12px 14px;color:#f1f5f9;font-size:0.9rem;box-sizing:border-box;outline:none;" />
+            <button type="button" onclick="togglePw('li-pass',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#64748b;cursor:pointer;font-size:0.9rem;">&#128065;</button>
+          </div>
+          <div id="li-err" style="display:none;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:8px;padding:10px 14px;font-size:0.8rem;font-weight:600;margin:10px 0;"></div>
+          <button id="btn-do-login" onclick="doLogin()" style="width:100%;padding:13px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:10px;font-size:0.92rem;font-weight:700;cursor:pointer;margin-top:6px;box-shadow:0 4px 14px rgba(99,102,241,0.4);">&#128274; Login</button>
+          <p style="text-align:center;color:#64748b;font-size:0.8rem;margin-top:14px;">No account? <a href="#" onclick="authTab('reg');return false;" style="color:#818cf8;font-weight:700;text-decoration:none;">Register here</a></p>
+        </div>
+
+        <!-- REGISTER FORM -->
+        <div id="auth-form-reg" style="display:none;padding:28px;">
+          <div style="text-align:center;margin-bottom:22px;">
+            <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:1.5rem;color:#fff;box-shadow:0 8px 24px rgba(16,185,129,0.4);">&#128100;</div>
+            <h3 style="color:#f1f5f9;font-size:1.25rem;font-weight:800;margin:0 0 4px;">Create Account</h3>
+            <p style="color:#64748b;font-size:0.8rem;margin:0;">Fill in your details to get started</p>
+          </div>
+          <label style="display:block;color:#94a3b8;font-size:0.78rem;font-weight:700;margin-bottom:6px;">&#128100; Full Name / Username</label>
+          <input id="rg-name" type="text" placeholder="e.g. Deepak Kumar" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:12px 14px;color:#f1f5f9;font-size:0.9rem;box-sizing:border-box;outline:none;margin-bottom:14px;" />
+          <label style="display:block;color:#94a3b8;font-size:0.78rem;font-weight:700;margin-bottom:6px;">&#128231; Gmail Address</label>
+          <input id="rg-email" type="email" placeholder="your@gmail.com" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:12px 14px;color:#f1f5f9;font-size:0.9rem;box-sizing:border-box;outline:none;margin-bottom:14px;" />
+          <label style="display:block;color:#94a3b8;font-size:0.78rem;font-weight:700;margin-bottom:6px;">&#128274; Password</label>
+          <div style="position:relative;margin-bottom:6px;">
+            <input id="rg-pass" type="password" placeholder="Min. 6 characters" style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:12px 44px 12px 14px;color:#f1f5f9;font-size:0.9rem;box-sizing:border-box;outline:none;" />
+            <button type="button" onclick="togglePw('rg-pass',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#64748b;cursor:pointer;font-size:0.9rem;">&#128065;</button>
+          </div>
+          <div id="rg-err" style="display:none;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:8px;padding:10px 14px;font-size:0.8rem;font-weight:600;margin:10px 0;"></div>
+          <div id="rg-ok"  style="display:none;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);color:#34d399;border-radius:8px;padding:10px 14px;font-size:0.8rem;font-weight:600;margin:10px 0;"></div>
+          <button id="btn-do-register" onclick="doRegister()" style="width:100%;padding:13px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-size:0.92rem;font-weight:700;cursor:pointer;margin-top:6px;box-shadow:0 4px 14px rgba(16,185,129,0.35);">&#128100; Create Account</button>
+          <p style="text-align:center;color:#64748b;font-size:0.8rem;margin-top:14px;">Already registered? <a href="#" onclick="authTab('login');return false;" style="color:#818cf8;font-weight:700;text-decoration:none;">Login</a></p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ====== FIREBASE AUTH & FIRESTORE ====== -->
+    <!-- Firebase SDK (compat version - easy to use) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+
+    <script>
+      // ============================================================
+      // FIREBASE CONFIG - Replace with your own Firebase project config
+      // Go to: https://console.firebase.google.com -> Your Project
+      //        -> Project Settings -> Your Apps -> Web App -> Config
+      // ============================================================
+      const firebaseConfig = {
+        apiKey:            "AIzaSyCdPnNhVGoNvskQpiylnNdMnUOlCBC7WiQ",
+        authDomain:        "cgms-website.firebaseapp.com",
+        projectId:         "cgms-website",
+        storageBucket:     "cgms-website.firebasestorage.app",
+        messagingSenderId: "1001298476816",
+        appId:             "1:1001298476816:web:32ebf8e3107c37859b6f95",
+        measurementId:     "G-1YTDN9JLRZ"
+      };
+
+      // Init Firebase safely
+      var auth;
+      var db;
+      try {
+        firebase.initializeApp(firebaseConfig);
+        auth = firebase.auth();
+        db = firebase.firestore();
+        console.log("Firebase & Firestore initialized OK");
+      } catch(initErr) {
+        console.error("Firebase init failed:", initErr);
+        document.addEventListener("DOMContentLoaded", function() {
+          var li = document.getElementById("li-err");
+          var rg = document.getElementById("rg-err");
+          if(li) { li.textContent = "Firebase init error: " + initErr.message; li.style.display = "block"; }
+          if(rg) { rg.textContent = "Firebase init error: " + initErr.message; rg.style.display = "block"; }
+        });
+      }
+
+
+      // ============================================================
+      // AUTH MODAL HELPERS
+      // ============================================================
+      function openAuthModal(tab) {
+        document.getElementById("auth-overlay").style.display = "flex";
+        authTab(tab || "login");
+        document.getElementById("li-err").style.display = "none";
+        document.getElementById("rg-err").style.display = "none";
+        document.getElementById("rg-ok").style.display  = "none";
+        document.getElementById("li-email").value = "";
+        document.getElementById("li-pass").value  = "";
+      }
+      function closeAuthModal() {
+        document.getElementById("auth-overlay").style.display = "none";
+      }
+      function authTab(t) {
+        var isL = t === "login";
+        document.getElementById("auth-form-login").style.display = isL ? "block" : "none";
+        document.getElementById("auth-form-reg").style.display   = isL ? "none"  : "block";
+        var tl = document.getElementById("auth-tab-login");
+        var tr = document.getElementById("auth-tab-reg");
+        tl.style.background   = isL ? "rgba(99,102,241,0.18)"  : "transparent";
+        tl.style.borderBottom = isL ? "2px solid #6366f1"      : "2px solid transparent";
+        tl.style.color        = isL ? "#818cf8"                 : "#64748b";
+        tr.style.background   = isL ? "transparent"            : "rgba(16,185,129,0.1)";
+        tr.style.borderBottom = isL ? "2px solid transparent"  : "2px solid #10b981";
+        tr.style.color        = isL ? "#64748b"                 : "#34d399";
+      }
+      function togglePw(id, btn) {
+        var inp = document.getElementById(id);
+        inp.type = inp.type === "password" ? "text" : "password";
+        btn.textContent = inp.type === "password" ? "\uD83D\uDC41" : "\uD83D\uDEAB";
+      }
+      function setLoading(btnId, loading) {
+        var btn = document.getElementById(btnId);
+        if (!btn) return;
+        btn.disabled = loading;
+        btn.style.opacity = loading ? "0.7" : "1";
+      }
+
+      // ============================================================
+      // FIREBASE LOGIN
+      // ============================================================
+      function doLogin() {
+        var email = document.getElementById("li-email").value.trim();
+        var pass  = document.getElementById("li-pass").value;
+        var err   = document.getElementById("li-err");
+        err.style.display = "none";
+
+        if (!email || !pass) {
+          err.textContent = "Please enter your email and password.";
+          err.style.display = "block"; return;
+        }
+        if (!auth) {
+          err.textContent = "Firebase not initialized. Please refresh and try again.";
+          err.style.display = "block"; return;
+        }
+
+        setLoading("btn-do-login", true);
+        auth.signInWithEmailAndPassword(email, pass)
+          .then(function(cred) {
+            closeAuthModal();
+            if (typeof showToast === "function") showToast("Welcome back, " + (cred.user.displayName || email) + "!", "success");
+          })
+          .catch(function(e) {
+            err.textContent = firebaseErrMsg(e.code);
+            err.style.display = "block";
+            setLoading("btn-do-login", false);
+          });
+      }
+
+      // ============================================================
+      // FIREBASE REGISTER
+      // ============================================================
+      function doRegister() {
+        var name  = document.getElementById("rg-name").value.trim();
+        var email = document.getElementById("rg-email").value.trim();
+        var pass  = document.getElementById("rg-pass").value;
+        var err   = document.getElementById("rg-err");
+        var ok    = document.getElementById("rg-ok");
+        err.style.display = "none";
+        ok.style.display  = "none";
+
+        if (name.length < 2)      { err.textContent = "Enter your full name (min 2 characters)."; err.style.display = "block"; return; }
+        if (!email.includes("@")) { err.textContent = "Enter a valid email address.";              err.style.display = "block"; return; }
+        if (pass.length < 6)      { err.textContent = "Password must be at least 6 characters.";  err.style.display = "block"; return; }
+
+        if (!auth) {
+          err.textContent = "Firebase not initialized. Please refresh and try again.";
+          err.style.display = "block"; return;
+        }
+        setLoading("btn-do-register", true);
+        auth.createUserWithEmailAndPassword(email, pass)
+          .then(function(cred) {
+            return cred.user.updateProfile({ displayName: name });
+          })
+          .then(function() {
+            ok.textContent = "Account created! Logging you in...";
+            ok.style.display = "block";
+            setTimeout(function() {
+              closeAuthModal();
+              if (typeof showToast === "function") showToast("Welcome, " + name + "! Account created.", "success");
+            }, 1000);
+          })
+          .catch(function(e) {
+            err.textContent = firebaseErrMsg(e.code);
+            err.style.display = "block";
+            setLoading("btn-do-register", false);
+          });
+      }
+
+      // ============================================================
+      // LOGOUT
+      // ============================================================
+      window._logoutCitizenBridge = function() { logoutCitizen(); };
+      function logoutCitizen() {
+        if (typeof auth !== "undefined" && auth) {
+          auth.signOut().then(function() {
+            window._loggedInCitizen = null;
+            var loginBtn = document.getElementById("btn-citizen-login");
+            var card     = document.getElementById("citizen-profile-card");
+            if (loginBtn) loginBtn.style.display = "flex";
+            if (card) card.style.display = "none";
+            if (typeof showToast === "function") showToast("You have been logged out.", "info");
+          }).catch(function(err) {
+            console.error("Sign out error:", err);
+            window._loggedInCitizen = null;
+            var loginBtn = document.getElementById("btn-citizen-login");
+            var card     = document.getElementById("citizen-profile-card");
+            if (loginBtn) loginBtn.style.display = "flex";
+            if (card) card.style.display = "none";
+          });
+        } else {
+          window._loggedInCitizen = null;
+          var loginBtn = document.getElementById("btn-citizen-login");
+          var card     = document.getElementById("citizen-profile-card");
+          if (loginBtn) loginBtn.style.display = "flex";
+          if (card) card.style.display = "none";
+        }
+      }
+
+      // ============================================================
+      // REALTIME AUTH STATE - updates header automatically
+      // ============================================================
+      if (auth) {
+        auth.onAuthStateChanged(function(user) {
+          var loginBtn = document.getElementById("btn-citizen-login");
+          var card     = document.getElementById("citizen-profile-card");
+          if (!loginBtn || !card) return;
+
+          if (user) {
+            var name     = user.displayName || user.email;
+            var initials = name.split(" ").map(function(w){ return w.charAt(0); }).join("").toUpperCase().substring(0, 2);
+
+            loginBtn.style.display = "none";
+            loginBtn.classList.add("hidden");
+            card.classList.remove("hidden");
+            card.style.display     = "flex";
+            var av = document.getElementById("citizen-avatar-circle");
+            var nm = document.getElementById("citizen-display-name");
+            var em = document.getElementById("citizen-display-email");
+            if (av) av.textContent = initials;
+            if (nm) nm.textContent = name;
+            if (em) em.textContent = user.email;
+
+            // Make available to app.js for complaint submission
+            window._loggedInCitizen = { id: user.uid, username: name, email: user.email, initials: initials };
+          } else {
+            loginBtn.classList.remove("hidden");
+            loginBtn.style.display = "flex";
+            card.classList.add("hidden");
+            card.style.display     = "none";
+            window._loggedInCitizen = null;
+          }
+        });
+      }
+
+      // ============================================================
+      // BRIDGE - so app.js complaint submission works with Firebase user
+      // ============================================================
+      function getLoggedInCitizen()    { return window._loggedInCitizen || null; }
+      function openUserLoginModal(m)   { openAuthModal(m); }
+      function updateCitizenHeader()   { /* handled by onAuthStateChanged */ }
+
+      // ============================================================
+      // FRIENDLY ERROR MESSAGES
+      // ============================================================
+      function firebaseErrMsg(code) {
+        var msgs = {
+          "auth/user-not-found":         "No account found with this email. Please register first.",
+          "auth/wrong-password":         "Incorrect password. Please try again.",
+          "auth/invalid-email":          "Please enter a valid email address.",
+          "auth/email-already-in-use":   "This email is already registered. Please login instead.",
+          "auth/weak-password":          "Password is too weak. Use at least 6 characters.",
+          "auth/too-many-requests":      "Too many failed attempts. Please wait a moment and try again.",
+          "auth/network-request-failed": "Network error. Check your internet connection.",
+          "auth/invalid-credential":     "Incorrect email or password. Please try again.",
+          "auth/unauthorized-domain":    "Domain not authorized. Add cgms-website.vercel.app in Firebase Console > Authentication > Settings > Authorized domains.",
+          "auth/operation-not-allowed":  "Email/Password login is not enabled. Go to Firebase Console > Authentication > Sign-in method > Enable Email/Password.",
+          "auth/internal-error":         "Firebase internal error. Check your Firebase project settings.",
+          "auth/configuration-not-found":"Firebase is not configured correctly. Check your project settings."
+        };
+        return (msgs[code] || "Error: " + code + ". Please screenshot this and report it.");
+      }
+    </script>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
