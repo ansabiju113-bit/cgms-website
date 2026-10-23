@@ -1976,23 +1976,43 @@ body {
   flex-shrink: 0;
 }
 
+.btn-citizen-logout {
+  background: rgba(239, 68, 68, 0.16);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  margin-left: 8px;
+}
+.btn-citizen-logout:hover {
+  background: rgba(239, 68, 68, 0.35);
+  color: #ffffff;
+  border-color: #ef4444;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
 .citizen-logout-btn {
   background: rgba(239,68,68,0.15);
   border: 1px solid rgba(239,68,68,0.25);
   color: #f87171;
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
+  padding: 6px 12px;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 0.78rem;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
   transition: all 0.2s;
-}
-.citizen-logout-btn:hover {
-  background: rgba(239,68,68,0.3);
-  color: #fca5a5;
 }
 
 /* Login/Register Modal Overlay */
