@@ -648,7 +648,185 @@ function openTrackingModal(complaintId) {  const c = appState.complaints.find(it
 // ==========================================
 // 10. JAVA CODE INSPECTOR & REPORT GENERATOR
 // ==========================================
-const JAVA_SOURCES = {  "User.java": `package com.jansuraksha.model;import java.time.LocalDateTime;/** * Abstract Base Class representing a System User in Jan-Suraksha. * Implements Encapsulation and Polymorphism principles. */public abstract class User {    private String id;    private String name;    private String email;    private String role; /* CITIZEN, WARD_MEMBER, PRESIDENT, ADMIN */    public User(String id, String name, String email, String role) {        this.id = id;        this.name = name;        this.email = email;        this.role = role;    }    public abstract String getDashboardAccessLevel();    public String getId() { return id; }    public String getName() { return name; }    public String getRole() { return role; }}`,  "Complaint.java": `package com.jansuraksha.model;public class Complaint {    public enum Status { SUBMITTED, UNDER_WARD_REVIEW, APPROVED, REJECTED, IN_PROGRESS, RESOLVED }        private String id;    private String title;    private String category;    private int upvotesCount;    private Status status;    public double calculatePriorityScore() {        return (categoryWeight * urgencyMultiplier * 10) + (upvotesCount * 2.5);    }}`,  "AIMergingEngine.java": `package com.jansuraksha.service;public class AIMergingEngine {    public List<MergeRecommendation> findPotentialDuplicates(Complaint newComplaint, List<Complaint> existing) {        // Intelligently matches Jaccard text similarity & Haversine geo distance    }}`,  "PriorityCalculationStrategy.java": `package com.jansuraksha.strategy;public interface PriorityCalculationStrategy {    double calculateScore(Complaint complaint);}`,  "Main.java": `package com.jansuraksha;public class Main {    public static void main(String[] args) {        System.out.println("Jan-Suraksha Java OOP Engine initialized.");    }}`};function openJavaModal() {  document.getElementById("modal-java-code").classList.remove("hidden");  loadJavaSource("User.java");}function loadJavaSource(filename) {  document.getElementById("java-code-content").innerText = JAVA_SOURCES[filename] || "// Source file loading...";}function generatePanchayathReport() {  const reportText = `JAN-SURAKSHA PANCHAYATH GRIEVANCE COMPLIANCE REPORTGenerated Date: ${new Date().toLocaleString()}===================================================Total Grievances Filed: ${appState.complaints.length}Resolved Grievances: ${appState.complaints.filter(c => c.status === "RESOLVED").length}In Progress (Dept Action): ${appState.complaints.filter(c => c.status === "IN_PROGRESS").length}AI Merged Duplicates: ${appState.complaints.filter(c => c.isMerged).length}Community Upvotes Cast: ${appState.complaints.reduce((acc, c) => acc + c.upvotes, 0)}Category Breakdown:- Road Damage: ${appState.complaints.filter(c => c.category === "Road Damage").length}- Water Supply: ${appState.complaints.filter(c => c.category === "Water Supply").length}- Streetlight: ${appState.complaints.filter(c => c.category === "Streetlight").length}- Drainage & Sewage: ${appState.complaints.filter(c => c.category === "Drainage" || c.category === "Sewage").length}  `;  const blob = new Blob([reportText], { type: "text/plain" });  const url = URL.createObjectURL(blob);  const a = document.createElement("a");  a.href = url;  a.download = "Panchayath_Grievance_Report.txt";  a.click();  showToast("Downloaded Official Panchayath Compliance Report", "success");}
+const JAVA_SOURCES = {
+  "User.java": `package com.jansuraksha.model;
+
+/**
+ * Abstract Base Class representing a System User in Jan-Suraksha.
+ * Demonstrates OOP Encapsulation and Polymorphism.
+ */
+public abstract class User {
+    private String id;
+    private String name;
+    private String email;
+    private String role; // Citizen, Ward Member, Panchayath President, Administrator
+    private String avatar;
+
+    public User(String id, String name, String email, String role, String avatar) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+        this.role = role;
+        this.avatar = avatar;
+    }
+
+    // Polymorphic method overridden by each subclass
+    public abstract String getDashboardAccessLevel();
+
+    public String getId() { return id; }
+    public String getName() { return name; }
+    public String getEmail() { return email; }
+    public String getRole() { return role; }
+    public String getAvatar() { return avatar; }
+}`,
+
+  "Complaint.java": `package com.jansuraksha.model;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class Complaint {
+    private String id;
+    private String title;
+    private String category;
+    private String description;
+    private String location;
+    private String wardName;
+    private String citizenName;
+    private String citizenEmail;
+    private Urgency urgency;
+    private ComplaintStatus status;
+    private int upvotes;
+    private String assignedDepartment;
+    private String wardRemarks;
+    private String photoUrl;
+    private String createdAt;
+    private boolean isMerged;
+    private double priorityScore;
+    private List<String> childIds = new ArrayList<>();
+
+    // Domain entity encapsulating status transitions
+    public void markAutoApproved() {
+        this.status = ComplaintStatus.APPROVED;
+        this.wardRemarks = "Verified and published directly on Public Feed.";
+    }
+
+    public void addUpvote() {
+        this.upvotes += 1;
+    }
+}`,
+
+  "ComplaintService.java": `package com.jansuraksha.service;
+
+import com.jansuraksha.model.Complaint;
+import com.jansuraksha.model.ComplaintStatus;
+import org.springframework.stereotype.Service;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+public class ComplaintService {
+    private final Map<String, Complaint> store = new HashMap<>();
+
+    public List<Complaint> getAllComplaints() {
+        return store.values().stream()
+            .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+            .collect(Collectors.toList());
+    }
+
+    public Map<String, List<Complaint>> getComplaintsGroupedByCategory() {
+        return getAllComplaints().stream()
+            .filter(c -> !c.isMerged())
+            .collect(Collectors.groupingBy(Complaint::getCategory));
+    }
+
+    public Complaint createComplaint(Complaint c) {
+        c.markAutoApproved(); // Auto-publish without admin verification bottleneck
+        store.put(c.getId(), c);
+        return c;
+    }
+}`,
+
+  "ComplaintController.java": `package com.jansuraksha.controller;
+
+import com.jansuraksha.model.Complaint;
+import com.jansuraksha.service.ComplaintService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/complaints")
+@CrossOrigin(origins = "*")
+public class ComplaintController {
+
+    private final ComplaintService complaintService;
+
+    public ComplaintController(ComplaintService complaintService) {
+        this.complaintService = complaintService;
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Complaint>> getAll() {
+        return ResponseEntity.ok(complaintService.getAllComplaints());
+    }
+
+    @GetMapping("/grouped")
+    public ResponseEntity<Map<String, List<Complaint>>> getGrouped() {
+        return ResponseEntity.ok(complaintService.getComplaintsGroupedByCategory());
+    }
+
+    @PostMapping
+    public ResponseEntity<Complaint> create(@RequestBody Complaint complaint) {
+        return ResponseEntity.ok(complaintService.createComplaint(complaint));
+    }
+}`,
+
+  "AIMergingEngine.java": `package com.jansuraksha.service;
+
+import java.util.Set;
+import java.util.HashSet;
+
+public class AIMergingEngine {
+
+    // Jaccard similarity between two complaints
+    public double calculateJaccardSimilarity(String s1, String s2) {
+        Set<String> set1 = tokenize(s1);
+        Set<String> set2 = tokenize(s2);
+        if (set1.isEmpty() || set2.isEmpty()) return 0.0;
+        Set<String> intersection = new HashSet<>(set1);
+        intersection.retainAll(set2);
+        Set<String> union = new HashSet<>(set1);
+        union.addAll(set2);
+        return (double) intersection.size() / union.size();
+    }
+
+    // Haversine formula for spherical distance in meters
+    public double calculateHaversineDistance(double lat1, double lon1, double lat2, double lon2) {
+        final int R = 6371000;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                   Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                   Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+}`,
+
+  "Main.java": `package com.jansuraksha;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class JanSurakshaApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(JanSurakshaApplication.class, args);
+        System.out.println("Jan-Suraksha Spring Boot Java Server running at http://localhost:8080/");
+    }
+}`
+};function openJavaModal() {  document.getElementById("modal-java-code").classList.remove("hidden");  loadJavaSource("User.java");}function loadJavaSource(filename) {  document.getElementById("java-code-content").innerText = JAVA_SOURCES[filename] || "// Source file loading...";}function generatePanchayathReport() {  const reportText = `JAN-SURAKSHA PANCHAYATH GRIEVANCE COMPLIANCE REPORTGenerated Date: ${new Date().toLocaleString()}===================================================Total Grievances Filed: ${appState.complaints.length}Resolved Grievances: ${appState.complaints.filter(c => c.status === "RESOLVED").length}In Progress (Dept Action): ${appState.complaints.filter(c => c.status === "IN_PROGRESS").length}AI Merged Duplicates: ${appState.complaints.filter(c => c.isMerged).length}Community Upvotes Cast: ${appState.complaints.reduce((acc, c) => acc + c.upvotes, 0)}Category Breakdown:- Road Damage: ${appState.complaints.filter(c => c.category === "Road Damage").length}- Water Supply: ${appState.complaints.filter(c => c.category === "Water Supply").length}- Streetlight: ${appState.complaints.filter(c => c.category === "Streetlight").length}- Drainage & Sewage: ${appState.complaints.filter(c => c.category === "Drainage" || c.category === "Sewage").length}  `;  const blob = new Blob([reportText], { type: "text/plain" });  const url = URL.createObjectURL(blob);  const a = document.createElement("a");  a.href = url;  a.download = "Panchayath_Grievance_Report.txt";  a.click();  showToast("Downloaded Official Panchayath Compliance Report", "success");}
 
 // ==========================================
 // 11. ADMIN PORTAL LOGIC
