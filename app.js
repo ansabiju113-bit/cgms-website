@@ -58,7 +58,15 @@ let appState = {  currentRole: "CITIZEN",  currentUser: INITIAL_USERS.CITIZEN,  
 };
 
 // Save to LocalStorage
-function persistState() {  localStorage.setItem("jansuraksha_complaints", JSON.stringify(appState.complaints));  localStorage.setItem("jansuraksha_notifs", JSON.stringify(appState.notifications));  localStorage.setItem("jansuraksha_upvotes", JSON.stringify(appState.upvotedIds));}
+function persistState() {
+  try {
+    localStorage.setItem("jansuraksha_complaints", JSON.stringify(appState.complaints));
+    localStorage.setItem("jansuraksha_notifs", JSON.stringify(appState.notifications));
+    localStorage.setItem("jansuraksha_upvotes", JSON.stringify(appState.upvotedIds));
+  } catch (e) {
+    console.warn("Storage quota exceeded or private mode, state retained in memory:", e);
+  }
+}
 
 // Priority Calculation Formula (Matching Java Strategy Pattern)
 function calculatePriorityScore(c) {  const categoryWeights = {    "Electricity": 1.5, "Sewage": 1.5, "Water Supply": 1.5,    "Road Damage": 1.3, "Drainage": 1.3,    "Tree Removal": 1.2, "Garbage": 1.2,    "Streetlight": 1.1, "Public Toilet": 1.1, "Others": 1.0  };  const urgencyMultipliers = { "CRITICAL": 2.0, "HIGH": 1.5, "MEDIUM": 1.2, "LOW": 1.0 };    const baseWeight = categoryWeights[c.category] || 1.0;  const mult = urgencyMultipliers[c.urgency] || 1.0;    return ((baseWeight * mult * 10) + (c.upvotes * 2.5)).toFixed(1);}
@@ -182,7 +190,11 @@ function switchRole(roleKey) {  appState.currentRole = roleKey;  appState.curren
 // ==========================================
 // 4. CITIZEN MODULE LOGIC & UPVOTING
 // ==========================================
-function renderCitizenFeed() {  const grid = document.getElementById("citizen-complaints-grid");  grid.innerHTML = "";  let list = appState.complaints.filter(c => !c.isMerged);  /* Filter by Tab */  if (appState.citizenFilterTab === "MY_COMPLAINTS") {    list = list.filter(c => c.citizenId === appState.currentUser.id);  }  /* Filter by Category */  if (appState.citizenFilterCategory !== "ALL") {    list = list.filter(c => c.category === appState.citizenFilterCategory);  }  /* Search Query */  if (appState.searchQuery) {    list = list.filter(c =>       c.title.toLowerCase().includes(appState.searchQuery) ||      c.description.toLowerCase().includes(appState.searchQuery) ||      c.location.toLowerCase().includes(appState.searchQuery)    );  }  if (list.length === 0) {    grid.innerHTML = `      <div class="glass-panel text-center py-8 full-width" style="grid-column: 1 / -1; padding: 40px;">        <i class="fa-solid fa-folder-open" style="font-size: 2.5rem; color: #64748b; margin-bottom: 12px;"></i>        <h4 style="color: #94a3b8;">No Grievances Found</h4>        <p style="color: #64748b; font-size: 0.85rem;">Try adjusting search filters or file a new grievance.</p>      </div>    `;    return;  }  list.forEach(c => {    const isUpvoted = appState.upvotedIds.includes(c.id);    const score = calculatePriorityScore(c);    const card = document.createElement("div");    card.className = "complaint-card";    card.innerHTML = `      <div class="card-image-wrap">        <img src="${c.photoUrl}" alt="${c.title}" />        <span class="category-tag"><i class="fa-solid fa-tag"></i> ${c.category}</span>        <span class="urgency-tag ${c.urgency}">${c.urgency}</span>      </div>      <div class="card-body">        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">          <span style="font-size: 0.72rem; color: #64748b; font-weight: 700;">#${c.id}</span>          <span class="status-pill status-${c.status}">${formatStatus(c.status)}</span>        </div>        <h3 class="card-title">${c.title}</h3>        <div class="card-meta">          <span><i class="fa-solid fa-location-dot"></i> ${c.location}</span>          <span><i class="fa-solid fa-layer-group"></i> ${c.wardName}</span>        </div>        <p class="card-desc">${c.description}</p>                <div class="card-footer">          <button class="btn-upvote ${isUpvoted ? 'upvoted' : ''}" onclick="toggleUpvote('${c.id}')">            <i class="fa-solid fa-circle-up"></i> ${c.upvotes} Upvotes          </button>                    <button class="btn-track" onclick="openTrackingModal('${c.id}')">            <i class="fa-solid fa-timeline"></i> Track Status          </button>        </div>      </div>    `;    grid.appendChild(card);  });}function toggleUpvote(complaintId) {
+function renderCitizenFeed() {  const grid = document.getElementById("citizen-complaints-grid");  grid.innerHTML = "";  let list = appState.complaints.filter(c => !c.isMerged);  /* Filter by Tab */  if (appState.citizenFilterTab === "MY_COMPLAINTS") {    list = list.filter(c => c.citizenId === appState.currentUser.id);  }  /* Filter by Category */  if (appState.citizenFilterCategory !== "ALL") {    list = list.filter(c => c.category === appState.citizenFilterCategory);  }  /* Search Query */  if (appState.searchQuery) {    list = list.filter(c =>       c.title.toLowerCase().includes(appState.searchQuery) ||      c.description.toLowerCase().includes(appState.searchQuery) ||      c.location.toLowerCase().includes(appState.searchQuery)    );  }  if (list.length === 0) {    grid.innerHTML = `      <div class="glass-panel text-center py-8 full-width" style="grid-column: 1 / -1; padding: 40px;">        <i class="fa-solid fa-folder-open" style="font-size: 2.5rem; color: #64748b; margin-bottom: 12px;"></i>        <h4 style="color: #94a3b8;">No Grievances Found</h4>        <p style="color: #64748b; font-size: 0.85rem;">Try adjusting search filters or file a new grievance.</p>      </div>    `;    return;  }  list.forEach(c => {    const isUpvoted = appState.upvotedIds.includes(c.id);    const score = calculatePriorityScore(c);    const card = document.createElement("div");    card.className = "complaint-card";    card.innerHTML = `      <div class="card-image-wrap">        <img src="${c.photoUrl}" alt="${c.title}" />        <span class="category-tag"><i class="fa-solid fa-tag"></i> ${c.category}</span>        <span class="urgency-tag ${c.urgency}">${c.urgency}</span>      </div>      <div class="card-body">        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">          <span style="font-size: 0.72rem; color: #64748b; font-weight: 700;">#${c.id}</span>          <span class="status-pill status-${c.status}">${formatStatus(c.status)}</span>        </div>        <h3 class="card-title">${c.title}</h3>        <div class="card-meta">
+          <span><i class="fa-solid fa-user-circle"></i> <strong>${c.citizenName || 'Citizen'}</strong></span>
+          <span><i class="fa-solid fa-location-dot"></i> ${c.location}</span>
+          <span><i class="fa-solid fa-layer-group"></i> ${c.wardName}</span>
+        </div>        <p class="card-desc">${c.description}</p>                <div class="card-footer">          <button class="btn-upvote ${isUpvoted ? 'upvoted' : ''}" onclick="toggleUpvote('${c.id}')">            <i class="fa-solid fa-circle-up"></i> ${c.upvotes} Upvotes          </button>                    <button class="btn-track" onclick="openTrackingModal('${c.id}')">            <i class="fa-solid fa-timeline"></i> Track Status          </button>        </div>      </div>    `;    grid.appendChild(card);  });}function toggleUpvote(complaintId) {
   const complaint = appState.complaints.find(c => c.id === complaintId);
   if (!complaint) return;
   const idx = appState.upvotedIds.indexOf(complaintId);
@@ -224,7 +236,44 @@ function openSubmitModal() {
       badgeBtn.style.display = "inline-flex";
     }
   }
-}function handlePhotoSelection(e) {  const file = e.target.files[0];  if (file) {    const reader = new FileReader();    reader.onload = (event) => {      appState.selectedPhotoUrl = event.target.result;      document.getElementById("photo-preview-img").src = appState.selectedPhotoUrl;      document.getElementById("photo-preview-container").classList.remove("hidden");    };    reader.readAsDataURL(file);  }}function removePhotoSelection() {  appState.selectedPhotoUrl = null;  document.getElementById("input-photo").value = "";  document.getElementById("photo-preview-container").classList.add("hidden");}function handleComplaintSubmit(e) {
+}function handlePhotoSelection(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const img = new Image();
+    img.onload = () => {
+      // Compress to max 800x800 and 70% JPEG quality to prevent QuotaExceededError
+      const maxDim = 800;
+      let w = img.width;
+      let h = img.height;
+      if (w > maxDim || h > maxDim) {
+        if (w > h) {
+          h = Math.round((h * maxDim) / w);
+          w = maxDim;
+        } else {
+          w = Math.round((w * maxDim) / h);
+          h = maxDim;
+        }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, w, h);
+      const compressedUrl = canvas.toDataURL("image/jpeg", 0.7);
+
+      appState.selectedPhotoUrl = compressedUrl;
+      const previewImg = document.getElementById("photo-preview-img");
+      const previewContainer = document.getElementById("photo-preview-container");
+      if (previewImg) previewImg.src = compressedUrl;
+      if (previewContainer) previewContainer.classList.remove("hidden");
+    };
+    img.src = event.target.result;
+  };
+  reader.readAsDataURL(file);
+}function removePhotoSelection() {  appState.selectedPhotoUrl = null;  document.getElementById("input-photo").value = "";  document.getElementById("photo-preview-container").classList.add("hidden");}function handleComplaintSubmit(e) {
   e.preventDefault();
   const loggedIn = getLoggedInCitizen();
   if (!loggedIn) {
