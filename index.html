@@ -88,7 +88,7 @@
         </button>
 
         <!-- Citizen Profile (shown when logged in) -->
-        <div id="citizen-profile-card" class="citizen-profile-card hidden">
+        <div id="citizen-profile-card" class="citizen-profile-card" style="display: none;">
           <div class="citizen-avatar-circle" id="citizen-avatar-circle">?</div>
           <div class="user-details">
             <span id="citizen-display-name" class="user-name">Guest</span>
@@ -829,6 +829,8 @@
             var initials = name.split(" ").map(function(w){ return w.charAt(0); }).join("").toUpperCase().substring(0, 2);
 
             loginBtn.style.display = "none";
+            loginBtn.classList.add("hidden");
+            card.classList.remove("hidden");
             card.style.display     = "flex";
             var av = document.getElementById("citizen-avatar-circle");
             var nm = document.getElementById("citizen-display-name");
@@ -840,7 +842,9 @@
             // Make available to app.js for complaint submission
             window._loggedInCitizen = { id: user.uid, username: name, email: user.email, initials: initials };
           } else {
+            loginBtn.classList.remove("hidden");
             loginBtn.style.display = "flex";
+            card.classList.add("hidden");
             card.style.display     = "none";
             window._loggedInCitizen = null;
           }
