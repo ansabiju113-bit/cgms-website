@@ -648,7 +648,7 @@
       //        -> Project Settings -> Your Apps -> Web App -> Config
       // ============================================================
       const firebaseConfig = {
-        apiKey:            "AIzaSyCdPnNhVGoNvskQpiy1nNdMnU0lCBC7WiQ",
+        apiKey:            "AIzaSyCdPnNhVGoNvskQpiylnNdMnUOlCBC7WiQ",
         authDomain:        "cgms-website.firebaseapp.com",
         projectId:         "cgms-website",
         storageBucket:     "cgms-website.firebasestorage.app",
@@ -657,9 +657,21 @@
         measurementId:     "G-1YTDN9JLRZ"
       };
 
-      // Init Firebase
-      firebase.initializeApp(firebaseConfig);
-      const auth = firebase.auth();
+      // Init Firebase safely
+      var auth;
+      try {
+        firebase.initializeApp(firebaseConfig);
+        auth = firebase.auth();
+        console.log("Firebase initialized OK");
+      } catch(initErr) {
+        console.error("Firebase init failed:", initErr);
+        document.addEventListener("DOMContentLoaded", function() {
+          var li = document.getElementById("li-err");
+          var rg = document.getElementById("rg-err");
+          if(li) { li.textContent = "Firebase init error: " + initErr.message; li.style.display = "block"; }
+          if(rg) { rg.textContent = "Firebase init error: " + initErr.message; rg.style.display = "block"; }
+        });
+      }
 
 
       // ============================================================
@@ -715,6 +727,10 @@
           err.textContent = "Please enter your email and password.";
           err.style.display = "block"; return;
         }
+        if (!auth) {
+          err.textContent = "Firebase not initialized. Please refresh and try again.";
+          err.style.display = "block"; return;
+        }
 
         setLoading("btn-do-login", true);
         auth.signInWithEmailAndPassword(email, pass)
@@ -745,6 +761,10 @@
         if (!email.includes("@")) { err.textContent = "Enter a valid email address.";              err.style.display = "block"; return; }
         if (pass.length < 6)      { err.textContent = "Password must be at least 6 characters.";  err.style.display = "block"; return; }
 
+        if (!auth) {
+          err.textContent = "Firebase not initialized. Please refresh and try again.";
+          err.style.display = "block"; return;
+        }
         setLoading("btn-do-register", true);
         auth.createUserWithEmailAndPassword(email, pass)
           .then(function(cred) {
@@ -777,7 +797,7 @@
       // ============================================================
       // REALTIME AUTH STATE - updates header automatically
       // ============================================================
-      auth.onAuthStateChanged(function(user) {
+      if (auth) { auth.onAuthStateChanged(function(user) {
         var loginBtn = document.getElementById("btn-citizen-login");
         var card     = document.getElementById("citizen-profile-card");
         if (!loginBtn || !card) return;
