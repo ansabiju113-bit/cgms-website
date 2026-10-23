@@ -645,10 +645,11 @@
       </div>
     </div>
 
-    <!-- ====== FIREBASE AUTH ====== -->
+    <!-- ====== FIREBASE AUTH & FIRESTORE ====== -->
     <!-- Firebase SDK (compat version - easy to use) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 
     <script>
@@ -669,10 +670,12 @@
 
       // Init Firebase safely
       var auth;
+      var db;
       try {
         firebase.initializeApp(firebaseConfig);
         auth = firebase.auth();
-        console.log("Firebase initialized OK");
+        db = firebase.firestore();
+        console.log("Firebase & Firestore initialized OK");
       } catch(initErr) {
         console.error("Firebase init failed:", initErr);
         document.addEventListener("DOMContentLoaded", function() {
