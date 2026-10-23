@@ -1,6 +1,14 @@
 package com.jansuraksha.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+
+@Entity
+@DiscriminatorValue("PRESIDENT")
 public class PanchayathPresident extends User {
+
+    @Column(name = "panchayath_name", length = 128)
     private String panchayathName;
 
     public PanchayathPresident() {
