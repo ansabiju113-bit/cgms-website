@@ -1,6 +1,14 @@
 package com.jansuraksha.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+
+@Entity
+@DiscriminatorValue("ADMIN")
 public class Admin extends User {
+
+    @Column(name = "system_console", length = 128)
     private String systemConsole;
 
     public Admin() {
