@@ -816,16 +816,20 @@
       // ============================================================
       function firebaseErrMsg(code) {
         var msgs = {
-          "auth/user-not-found":       "No account found with this email. Please register first.",
-          "auth/wrong-password":       "Incorrect password. Please try again.",
-          "auth/invalid-email":        "Please enter a valid email address.",
-          "auth/email-already-in-use": "This email is already registered. Please login instead.",
-          "auth/weak-password":        "Password is too weak. Use at least 6 characters.",
-          "auth/too-many-requests":    "Too many failed attempts. Please wait a moment and try again.",
+          "auth/user-not-found":         "No account found with this email. Please register first.",
+          "auth/wrong-password":         "Incorrect password. Please try again.",
+          "auth/invalid-email":          "Please enter a valid email address.",
+          "auth/email-already-in-use":   "This email is already registered. Please login instead.",
+          "auth/weak-password":          "Password is too weak. Use at least 6 characters.",
+          "auth/too-many-requests":      "Too many failed attempts. Please wait a moment and try again.",
           "auth/network-request-failed": "Network error. Check your internet connection.",
-          "auth/invalid-credential":   "Incorrect email or password. Please try again."
+          "auth/invalid-credential":     "Incorrect email or password. Please try again.",
+          "auth/unauthorized-domain":    "Domain not authorized. Add cgms-website.vercel.app in Firebase Console > Authentication > Settings > Authorized domains.",
+          "auth/operation-not-allowed":  "Email/Password login is not enabled. Go to Firebase Console > Authentication > Sign-in method > Enable Email/Password.",
+          "auth/internal-error":         "Firebase internal error. Check your Firebase project settings.",
+          "auth/configuration-not-found":"Firebase is not configured correctly. Check your project settings."
         };
-        return msgs[code] || "Something went wrong. Please try again.";
+        return (msgs[code] || "Error: " + code + ". Please screenshot this and report it.");
       }
     </script>
 
