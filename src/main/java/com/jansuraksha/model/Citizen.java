@@ -1,7 +1,17 @@
 package com.jansuraksha.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+
+@Entity
+@DiscriminatorValue("CITIZEN")
 public class Citizen extends User {
+
+    @Column(name = "ward_id", length = 32)
     private String wardId;
+
+    @Column(name = "ward_name", length = 128)
     private String wardName;
 
     public Citizen() {
