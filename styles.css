@@ -1422,14 +1422,458 @@ body {
   to { transform: translateX(0); opacity: 1; }
 }
 
-/* RESPONSIVE DESIGN */
+/* ==========================================================================
+   COMPREHENSIVE MOBILE & TABLET RESPONSIVE SYSTEM
+   No overlapping menus, fluid touch UI, optimized for all screen sizes
+   ========================================================================== */
+
+/* TABLET (<= 900px) */
 @media (max-width: 900px) {
-  .main-header { flex-direction: column; gap: 14px; align-items: stretch; }
+  .main-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 10px 14px;
+    align-items: center;
+    padding: 10px 16px;
+  }
+  .header-brand {
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
+  }
+  .header-actions {
+    grid-column: 2 / 3;
+    grid-row: 1 / 2;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .role-switcher-container {
+    grid-column: 1 / -1;
+    grid-row: 2 / 3;
+    width: 100%;
+    margin: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .role-switcher-container::-webkit-scrollbar {
+    display: none;
+  }
+  .role-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    width: 100%;
+    gap: 4px;
+  }
+  .role-btn {
+    justify-content: center;
+    padding: 7px 6px;
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
   .admin-grid { grid-template-columns: 1fr; }
   .full-width { grid-column: span 1; }
-  .form-row { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; gap: 12px; }
   .portal-hero { flex-direction: column; gap: 16px; text-align: center; }
 }
+
+/* MOBILE PHONES (<= 768px) */
+@media (max-width: 768px) {
+  /* Announcement Ticker */
+  .top-announcement {
+    padding: 4px 12px;
+    font-size: 0.72rem;
+  }
+  .top-announcement .quick-stats {
+    display: none;
+  }
+  .ticker-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 240px;
+  }
+
+  /* Main Header */
+  .main-header {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 1.05rem;
+    border-radius: 10px;
+  }
+  .logo-text h1 {
+    font-size: 1.05rem;
+  }
+  .logo-text p {
+    display: none; /* Hide subtitle on mobile to save vertical space */
+  }
+  .role-label {
+    display: none; /* Hide 'Active Role:' label on mobile */
+  }
+  .role-btn {
+    padding: 7px 4px;
+    font-size: 0.72rem;
+    gap: 4px;
+  }
+
+  /* Header Actions */
+  .header-actions {
+    gap: 6px;
+  }
+  #btn-view-java {
+    padding: 6px 8px;
+    font-size: 0.72rem;
+  }
+  #btn-view-java i {
+    font-size: 0.85rem;
+  }
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 0.95rem;
+  }
+  .btn-citizen-login {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+  .citizen-profile-card {
+    padding: 3px 8px 3px 4px;
+    gap: 6px;
+    border-radius: 10px;
+  }
+  .citizen-avatar-circle {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+  }
+  .user-details .user-name {
+    font-size: 0.72rem;
+    max-width: 75px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .user-details .user-role-tag {
+    display: none; /* Hide long email address in header card on mobile */
+  }
+  .btn-citizen-logout {
+    padding: 4px 8px;
+    font-size: 0.72rem;
+    gap: 2px;
+  }
+  .btn-citizen-logout span {
+    display: none; /* Show only logout icon on mobile */
+  }
+
+  /* Main Body */
+  .main-body {
+    padding: 12px 10px 40px;
+  }
+
+  /* Portal Hero Banner */
+  .portal-hero {
+    padding: 18px 14px;
+    border-radius: 14px;
+    margin-bottom: 16px;
+    gap: 12px;
+  }
+  .hero-text h2 {
+    font-size: 1.25rem;
+    line-height: 1.25;
+  }
+  .hero-text p {
+    font-size: 0.82rem;
+    line-height: 1.4;
+  }
+  .hero-cta {
+    width: 100%;
+  }
+  .btn-primary-gradient {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 16px;
+    font-size: 0.9rem;
+  }
+
+  /* Filter Bar */
+  .filter-bar {
+    padding: 10px 12px;
+    margin-bottom: 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    border-radius: 12px;
+  }
+  .search-input-group {
+    width: 100%;
+    padding: 8px 12px;
+  }
+  .filter-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+  .form-select {
+    width: 100%;
+    font-size: 0.78rem;
+    padding: 8px 10px;
+  }
+
+  /* Complaints Grid */
+  .complaints-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .complaint-card {
+    border-radius: 14px;
+  }
+  .card-image-wrap {
+    height: 190px;
+  }
+  .card-body {
+    padding: 14px;
+  }
+  .card-title {
+    font-size: 0.98rem;
+    line-height: 1.3;
+  }
+  .card-meta {
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    font-size: 0.75rem;
+  }
+  .card-desc {
+    font-size: 0.82rem;
+    line-height: 1.4;
+    margin-bottom: 12px;
+  }
+  .card-footer {
+    display: flex;
+    gap: 8px;
+  }
+  .btn-upvote, .btn-track {
+    flex: 1;
+    padding: 9px 8px;
+    font-size: 0.78rem;
+    justify-content: center;
+  }
+
+  /* Notification Drawer */
+  .notification-drawer {
+    position: fixed;
+    top: 70px;
+    left: 10px;
+    right: 10px;
+    width: auto;
+    max-width: calc(100vw - 20px);
+    z-index: 1000;
+  }
+
+  /* Toast Container */
+  .toast-container {
+    left: 12px;
+    right: 12px;
+    bottom: 16px;
+    max-width: calc(100vw - 24px);
+  }
+  .toast {
+    font-size: 0.8rem;
+    padding: 10px 14px;
+    width: 100%;
+  }
+
+  /* Modals */
+  .modal-overlay {
+    padding: 10px;
+  }
+  .modal-card {
+    max-height: 94vh;
+    border-radius: 16px;
+    width: 100%;
+    margin: 0;
+  }
+  .modal-header {
+    padding: 12px 16px;
+  }
+  .modal-header h3 {
+    font-size: 0.95rem;
+  }
+  .modal-body {
+    padding: 14px 16px;
+    gap: 12px;
+  }
+  .modal-footer {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+  .modal-footer button {
+    width: 100%;
+    justify-content: center;
+    padding: 11px;
+  }
+  .auth-card {
+    padding: 20px 16px;
+    border-radius: 16px;
+    margin: 0 6px;
+    max-height: 94vh;
+    overflow-y: auto;
+    width: 100%;
+  }
+  .admin-login-card {
+    padding: 20px 16px;
+    margin: 0 6px;
+    border-radius: 16px;
+    width: 100%;
+  }
+
+  /* Admin Portal Responsive */
+  .admin-complaint-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 12px;
+  }
+  .acstat-card {
+    padding: 10px 12px;
+  }
+  .acstat-num {
+    font-size: 1.25rem;
+  }
+  .acstat-label {
+    font-size: 0.7rem;
+  }
+  .admin-filter-tabs {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 10px 12px;
+  }
+  .admin-filter-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .admin-tab-btn {
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
+  .admin-sort-bar {
+    padding: 8px 12px;
+    font-size: 0.75rem;
+  }
+  .admin-complaint-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px 12px;
+  }
+  .acr-title {
+    white-space: normal;
+    word-break: break-word;
+    font-size: 0.92rem;
+  }
+  .acr-meta {
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.72rem;
+  }
+  .acr-right-col {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .acr-vote-badge {
+    padding: 6px 12px;
+    min-width: 60px;
+  }
+  .acr-vote-num {
+    font-size: 1.15rem;
+  }
+  .acr-actions {
+    flex-direction: row;
+    gap: 6px;
+    width: auto;
+  }
+  .acr-btn {
+    padding: 7px 12px;
+    font-size: 0.75rem;
+  }
+
+  /* Ward & President Portals */
+  .module-header-banner {
+    padding: 16px 14px;
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+  .ward-badge {
+    width: 100%;
+    justify-content: center;
+  }
+  .ward-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px 12px;
+  }
+  .ward-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+  .btn-sm-approve, .btn-sm-reject {
+    width: 100%;
+    justify-content: center;
+    padding: 8px;
+  }
+  .stats-overview-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
+
+/* EXTRA SMALL SCREENS (<= 480px) */
+@media (max-width: 480px) {
+  .role-btn {
+    padding: 6px 2px;
+    font-size: 0.68rem;
+    gap: 2px;
+  }
+  .role-btn i {
+    font-size: 0.75rem;
+  }
+  .filter-controls {
+    grid-template-columns: 1fr;
+  }
+  .admin-complaint-stats {
+    grid-template-columns: 1fr;
+  }
+  .stats-overview-row {
+    grid-template-columns: 1fr;
+  }
+  .acr-right-col {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .acr-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
 
 /* ==========================================================================
    ADMIN LOGIN SECURITY MODAL
