@@ -30,6 +30,10 @@ function updateCitizenHeader() {
 }
 
 function logoutCitizen() {
+  if (typeof window !== "undefined" && window._logoutCitizenBridge) {
+    window._logoutCitizenBridge();
+    return;
+  }
   if (typeof auth !== "undefined" && auth) {
     auth.signOut();
   }
