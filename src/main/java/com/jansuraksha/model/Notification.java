@@ -1,11 +1,29 @@
 package com.jansuraksha.model;
 
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "notifications")
 public class Notification {
+
+    @Id
+    @Column(name = "id", length = 64, nullable = false)
     private String id;
+
+    @Column(name = "user_id", length = 64)
     private String userId;
+
+    @Column(name = "complaint_id", length = 32)
     private String complaintId;
+
+    @Lob
+    @Column(name = "message", columnDefinition = "TEXT")
     private String message;
+
+    @Column(name = "type", length = 32)
     private String type;
+
+    @Column(name = "time_str", length = 32)
     private String time;
 
     public Notification() {}
