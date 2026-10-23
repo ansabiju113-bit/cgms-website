@@ -118,9 +118,11 @@ function initFirestoreSync() {
         }
       });
 
-      // Sort newest first
+      // Sort newest first safely across all browsers
       remoteComplaints.sort(function(a, b) {
-        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+        var timeA = a.createdAt ? new Date(a.createdAt.replace(" ", "T")).getTime() : 0;
+        var timeB = b.createdAt ? new Date(b.createdAt.replace(" ", "T")).getTime() : 0;
+        return (isNaN(timeB) ? 0 : timeB) - (isNaN(timeA) ? 0 : timeA);
       });
 
       appState.complaints = remoteComplaints;
@@ -260,7 +262,29 @@ function switchRole(roleKey) {  appState.currentRole = roleKey;  appState.curren
 // ==========================================
 // 4. CITIZEN MODULE LOGIC & UPVOTING
 // ==========================================
-function renderCitizenFeed() {  const grid = document.getElementById("citizen-complaints-grid");  grid.innerHTML = "";  let list = appState.complaints.filter(c => !c.isMerged);  /* Filter by Tab */  if (appState.citizenFilterTab === "MY_COMPLAINTS") {    list = list.filter(c => c.citizenId === appState.currentUser.id);  }  /* Filter by Category */  if (appState.citizenFilterCategory !== "ALL") {    list = list.filter(c => c.category === appState.citizenFilterCategory);  }  /* Search Query */  if (appState.searchQuery) {    list = list.filter(c =>       c.title.toLowerCase().includes(appState.searchQuery) ||      c.description.toLowerCase().includes(appState.searchQuery) ||      c.location.toLowerCase().includes(appState.searchQuery)    );  }  if (list.length === 0) {    grid.innerHTML = `      <div class="glass-panel text-center py-8 full-width" style="grid-column: 1 / -1; padding: 40px;">        <i class="fa-solid fa-folder-open" style="font-size: 2.5rem; color: #64748b; margin-bottom: 12px;"></i>        <h4 style="color: #94a3b8;">No Grievances Found</h4>        <p style="color: #64748b; font-size: 0.85rem;">Try adjusting search filters or file a new grievance.</p>      </div>    `;    return;  }  list.forEach(c => {    const isUpvoted = appState.upvotedIds.includes(c.id);    const score = calculatePriorityScore(c);    const card = document.createElement("div");    card.className = "complaint-card";    card.innerHTML = `      <div class="card-image-wrap">        <img src="${c.photoUrl}" alt="${c.title}" />        <span class="category-tag"><i class="fa-solid fa-tag"></i> ${c.category}</span>        <span class="urgency-tag ${c.urgency}">${c.urgency}</span>      </div>      <div class="card-body">        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">          <span style="font-size: 0.72rem; color: #64748b; font-weight: 700;">#${c.id}</span>          <span class="status-pill status-${c.status}">${formatStatus(c.status)}</span>        </div>        <h3 class="card-title">${c.title}</h3>        <div class="card-meta">
+function renderCitizenFeed() {
+  const grid = document.getElementById("citizen-complaints-grid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  let list = appState.complaints.filter(c => !c.isMerged);
+
+  /* Always sort newest first so new grievances appear right at the top of the homepage */
+  list.sort(function(a, b) {
+    var timeA = a.createdAt ? new Date(a.createdAt.replace(" ", "T")).getTime() : 0;
+    var timeB = b.createdAt ? new Date(b.createdAt.replace(" ", "T")).getTime() : 0;
+    return (isNaN(timeB) ? 0 : timeB) - (isNaN(timeA) ? 0 : timeA);
+  });
+
+  /* Filter by Tab */
+  if (appState.citizenFilterTab === "MY_COMPLAINTS") {
+    var loggedIn = getLoggedInCitizen();
+    var currentUid = loggedIn ? loggedIn.id : (appState.currentUser ? appState.currentUser.id : null);
+    var currentEmail = loggedIn ? loggedIn.email : null;
+    list = list.filter(function(c) {
+      return (currentUid && c.citizenId === currentUid) ||
+             (currentEmail && c.citizenEmail && c.citizenEmail.toLowerCase() === currentEmail.toLowerCase());
+    });
+  }  /* Filter by Category */  if (appState.citizenFilterCategory !== "ALL") {    list = list.filter(c => c.category === appState.citizenFilterCategory);  }  /* Search Query */  if (appState.searchQuery) {    list = list.filter(c =>       c.title.toLowerCase().includes(appState.searchQuery) ||      c.description.toLowerCase().includes(appState.searchQuery) ||      c.location.toLowerCase().includes(appState.searchQuery)    );  }  if (list.length === 0) {    grid.innerHTML = `      <div class="glass-panel text-center py-8 full-width" style="grid-column: 1 / -1; padding: 40px;">        <i class="fa-solid fa-folder-open" style="font-size: 2.5rem; color: #64748b; margin-bottom: 12px;"></i>        <h4 style="color: #94a3b8;">No Grievances Found</h4>        <p style="color: #64748b; font-size: 0.85rem;">Try adjusting search filters or file a new grievance.</p>      </div>    `;    return;  }  list.forEach(c => {    const isUpvoted = appState.upvotedIds.includes(c.id);    const score = calculatePriorityScore(c);    const card = document.createElement("div");    card.className = "complaint-card";    card.innerHTML = `      <div class="card-image-wrap">        <img src="${c.photoUrl}" alt="${c.title}" />        <span class="category-tag"><i class="fa-solid fa-tag"></i> ${c.category}</span>        <span class="urgency-tag ${c.urgency}">${c.urgency}</span>      </div>      <div class="card-body">        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">          <span style="font-size: 0.72rem; color: #64748b; font-weight: 700;">#${c.id}</span>          <span class="status-pill status-${c.status}">${formatStatus(c.status)}</span>        </div>        <h3 class="card-title">${c.title}</h3>        <div class="card-meta">
           <span><i class="fa-solid fa-user-circle"></i> <strong>${c.citizenName || 'Citizen'}</strong></span>
           <span><i class="fa-solid fa-location-dot"></i> ${c.location}</span>
           <span><i class="fa-solid fa-layer-group"></i> ${c.wardName}</span>
@@ -356,7 +380,7 @@ function openSubmitModal() {
     var m = c.id && c.id.match(/^CMP-(\d+)$/);
     return m ? Math.max(max, parseInt(m[1], 10)) : max;
   }, 1000);
-  const newId = `CMP-${maxNum + 1}`;  const newComplaint = {    id: newId,    title,    category,    description,    location,    lat: 10.5230 + (Math.random() * 0.01),    lng: 76.2140 + (Math.random() * 0.01),    wardId,    wardName: wardNames[wardId] || "Ward 1",    citizenId: loggedIn.id,    citizenName: loggedIn.username,    citizenEmail: loggedIn.email,    urgency,    status: "SUBMITTED",    upvotes: 1,    assignedDepartment: "Unassigned",    wardRemarks: "Received transparently via Citizen Portal. Pending Ward Member review.",    photoUrl: appState.selectedPhotoUrl || fallbackPhotos[category] || "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=600",    createdAt: new Date().toISOString().replace('T', ' ').substring(0, 16),    isMerged: false,    childIds: []  };  appState.complaints.unshift(newComplaint);  appState.upvotedIds.push(newId);  syncComplaintToFirestore(newComplaint);  /* Notify the citizen */  addNotification(appState.currentUser.id, newId, `Grievance #${newId} filed successfully! Live tracking is active.`, "STATUS_CHANGE");  /* Notify admin (U401) directly so it appears in Admin panel immediately */  addNotification("U401", newId, `\ud83d\udea8 New complaint #${newId} from ${loggedIn.username} (${loggedIn.email}): "${title}" (${category} \u2022 ${urgency})`, "NEW_COMPLAINT");  persistState();  closeAllModals();  renderRoleView();  showToast(`Grievance #${newId} submitted! Admin has been notified.`, "success");    /* Reset Form */  document.getElementById("form-submit-complaint").reset();  removePhotoSelection();}
+  const newId = `CMP-${maxNum + 1}`;  const newComplaint = {    id: newId,    title,    category,    description,    location,    lat: 10.5230 + (Math.random() * 0.01),    lng: 76.2140 + (Math.random() * 0.01),    wardId,    wardName: wardNames[wardId] || "Ward 1",    citizenId: loggedIn.id,    citizenName: loggedIn.username,    citizenEmail: loggedIn.email,    urgency,    status: "APPROVED",    upvotes: 1,    assignedDepartment: "Unassigned",    wardRemarks: "Verified and published directly on Public Feed.",     photoUrl: appState.selectedPhotoUrl || fallbackPhotos[category] || "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=600",    createdAt: new Date().toISOString().replace('T', ' ').substring(0, 16),    isMerged: false,    childIds: []  };  appState.complaints.unshift(newComplaint);  appState.upvotedIds.push(newId);  syncComplaintToFirestore(newComplaint);  /* Automatically ensure citizen is on Public Feed to see their posted grievance immediately */  appState.currentRole = "CITIZEN";  appState.citizenFilterTab = "PUBLIC";  appState.citizenFilterCategory = "ALL";  appState.searchQuery = "";  var tabSel = document.getElementById("citizen-tab-filter");  if (tabSel) tabSel.value = "PUBLIC";  var catSel = document.getElementById("citizen-category-filter");  if (catSel) catSel.value = "ALL";  var sInp = document.getElementById("search-input");  if (sInp) sInp.value = "";  /* Notify the citizen */  addNotification(loggedIn.id, newId, `Grievance #${newId} is live on the home page! Public community upvoting active.`, "STATUS_CHANGE");  /* Notify admin (U401) */  addNotification("U401", newId, `📢 Grievance #${newId} posted by ${loggedIn.username} (${loggedIn.email}): "${title}" (${category} • ${urgency})`, "NEW_COMPLAINT");  persistState();  closeAllModals();  renderRoleView();  showToast(`Grievance #${newId} posted! Live on homepage feed.`, "success");    /* Reset Form */  document.getElementById("form-submit-complaint").reset();  removePhotoSelection();}
 
 // ==========================================
 // 6. WARD MEMBER PORTAL LOGIC
