@@ -99,13 +99,7 @@
           </button>
         </div>
 
-                <div class="user-profile-card">
-          <img id="user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100" alt="Avatar" />
-          <div class="user-details">
-            <span id="user-display-name" class="user-name">Rajesh Kumar</span>
-            <span id="user-display-role" class="user-role-tag">Citizen • Ward 1</span>
-          </div>
-        </div>
+        
       </div>
     </header>
 
@@ -612,7 +606,7 @@
             <button type="button" onclick="togglePw('li-pass',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#64748b;cursor:pointer;font-size:0.9rem;">&#128065;</button>
           </div>
           <div id="li-err" style="display:none;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:8px;padding:10px 14px;font-size:0.8rem;font-weight:600;margin:10px 0;"></div>
-          <button onclick="doLogin()" style="width:100%;padding:13px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:10px;font-size:0.92rem;font-weight:700;cursor:pointer;margin-top:6px;box-shadow:0 4px 14px rgba(99,102,241,0.4);">&#128274; Login</button>
+          <button id="btn-do-login" onclick="doLogin()" style="width:100%;padding:13px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;border-radius:10px;font-size:0.92rem;font-weight:700;cursor:pointer;margin-top:6px;box-shadow:0 4px 14px rgba(99,102,241,0.4);">&#128274; Login</button>
           <p style="text-align:center;color:#64748b;font-size:0.8rem;margin-top:14px;">No account? <a href="#" onclick="authTab('reg');return false;" style="color:#818cf8;font-weight:700;text-decoration:none;">Register here</a></p>
         </div>
 
@@ -634,27 +628,48 @@
           </div>
           <div id="rg-err" style="display:none;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:8px;padding:10px 14px;font-size:0.8rem;font-weight:600;margin:10px 0;"></div>
           <div id="rg-ok"  style="display:none;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);color:#34d399;border-radius:8px;padding:10px 14px;font-size:0.8rem;font-weight:600;margin:10px 0;"></div>
-          <button onclick="doRegister()" style="width:100%;padding:13px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-size:0.92rem;font-weight:700;cursor:pointer;margin-top:6px;box-shadow:0 4px 14px rgba(16,185,129,0.35);">&#128100; Create Account</button>
+          <button id="btn-do-register" onclick="doRegister()" style="width:100%;padding:13px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-size:0.92rem;font-weight:700;cursor:pointer;margin-top:6px;box-shadow:0 4px 14px rgba(16,185,129,0.35);">&#128100; Create Account</button>
           <p style="text-align:center;color:#64748b;font-size:0.8rem;margin-top:14px;">Already registered? <a href="#" onclick="authTab('login');return false;" style="color:#818cf8;font-weight:700;text-decoration:none;">Login</a></p>
         </div>
 
       </div>
     </div>
 
-    <!-- ====== SELF-CONTAINED AUTH SCRIPT ====== -->
-    <script>
-      // ---- Storage helpers ----
-      function getUsers()  { return JSON.parse(localStorage.getItem("cgms_users")  || "[]"); }
-      function saveUsers(u){ localStorage.setItem("cgms_users", JSON.stringify(u)); }
-      function getMe()     { return JSON.parse(sessionStorage.getItem("cgms_me")   || "null"); }
-      function saveMe(u)   { sessionStorage.setItem("cgms_me", JSON.stringify(u)); }
-      function clearMe()   { sessionStorage.removeItem("cgms_me"); }
+    <!-- ====== FIREBASE AUTH ====== -->
+    <!-- Firebase SDK (compat version - easy to use) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
-      // ---- Modal helpers ----
+    <script>
+      // ============================================================
+      // FIREBASE CONFIG - Replace with your own Firebase project config
+      // Go to: https://console.firebase.google.com -> Your Project
+      //        -> Project Settings -> Your Apps -> Web App -> Config
+      // ============================================================
+      const firebaseConfig = {
+        apiKey:            "AIzaSyDemo_ReplaceWithYourKey",
+        authDomain:        "your-project.firebaseapp.com",
+        projectId:         "your-project-id",
+        storageBucket:     "your-project.appspot.com",
+        messagingSenderId: "123456789",
+        appId:             "1:123456789:web:abcdef"
+      };
+
+      // Init Firebase
+      firebase.initializeApp(firebaseConfig);
+      const auth = firebase.auth();
+      const db   = firebase.firestore();
+
+      // ============================================================
+      // AUTH MODAL HELPERS
+      // ============================================================
       function openAuthModal(tab) {
         document.getElementById("auth-overlay").style.display = "flex";
         authTab(tab || "login");
         document.getElementById("li-err").style.display = "none";
+        document.getElementById("rg-err").style.display = "none";
+        document.getElementById("rg-ok").style.display  = "none";
         document.getElementById("li-email").value = "";
         document.getElementById("li-pass").value  = "";
       }
@@ -679,92 +694,148 @@
         inp.type = inp.type === "password" ? "text" : "password";
         btn.textContent = inp.type === "password" ? "\uD83D\uDC41" : "\uD83D\uDEAB";
       }
+      function setLoading(btnId, loading) {
+        var btn = document.getElementById(btnId);
+        if (!btn) return;
+        btn.disabled = loading;
+        btn.style.opacity = loading ? "0.7" : "1";
+      }
 
-      // ---- Login ----
+      // ============================================================
+      // FIREBASE LOGIN
+      // ============================================================
       function doLogin() {
-        var email = document.getElementById("li-email").value.trim().toLowerCase();
+        var email = document.getElementById("li-email").value.trim();
         var pass  = document.getElementById("li-pass").value;
         var err   = document.getElementById("li-err");
         err.style.display = "none";
-        if (!email || !pass) { err.textContent = "Please fill in all fields."; err.style.display = "block"; return; }
-        var users = getUsers();
-        var user  = users.find(function(u){ return u.email === email && u.password === pass; });
-        if (!user) { err.textContent = "Incorrect email or password. Please try again."; err.style.display = "block"; return; }
-        saveMe(user);
-        closeAuthModal();
-        refreshHeader();
-        if (typeof showToast === "function") showToast("Welcome back, " + user.username + "!", "success");
+
+        if (!email || !pass) {
+          err.textContent = "Please enter your email and password.";
+          err.style.display = "block"; return;
+        }
+
+        setLoading("btn-do-login", true);
+        auth.signInWithEmailAndPassword(email, pass)
+          .then(function(cred) {
+            closeAuthModal();
+            if (typeof showToast === "function") showToast("Welcome back, " + (cred.user.displayName || email) + "!", "success");
+          })
+          .catch(function(e) {
+            err.textContent = firebaseErrMsg(e.code);
+            err.style.display = "block";
+            setLoading("btn-do-login", false);
+          });
       }
 
-      // ---- Register ----
+      // ============================================================
+      // FIREBASE REGISTER
+      // ============================================================
       function doRegister() {
         var name  = document.getElementById("rg-name").value.trim();
-        var email = document.getElementById("rg-email").value.trim().toLowerCase();
+        var email = document.getElementById("rg-email").value.trim();
         var pass  = document.getElementById("rg-pass").value;
         var err   = document.getElementById("rg-err");
         var ok    = document.getElementById("rg-ok");
         err.style.display = "none";
         ok.style.display  = "none";
-        if (name.length < 2)  { err.textContent = "Please enter your full name (min 2 chars)."; err.style.display = "block"; return; }
-        if (!email.includes("@")) { err.textContent = "Please enter a valid email address."; err.style.display = "block"; return; }
-        if (pass.length < 6)  { err.textContent = "Password must be at least 6 characters."; err.style.display = "block"; return; }
-        var users = getUsers();
-        if (users.find(function(u){ return u.email === email; })) {
-          err.textContent = "This email is already registered. Please login instead."; err.style.display = "block"; return;
-        }
-        var initials = name.split(" ").map(function(w){ return w.charAt(0); }).join("").toUpperCase().substring(0,2);
-        var newUser = { id: "CIT-" + Date.now(), username: name, email: email, password: pass, initials: initials };
-        users.push(newUser);
-        saveUsers(users);
-        saveMe(newUser);
-        ok.textContent = "Account created! Logging you in...";
-        ok.style.display = "block";
-        setTimeout(function() {
-          closeAuthModal();
-          refreshHeader();
-          if (typeof showToast === "function") showToast("Welcome, " + name + "! Account created.", "success");
-        }, 1000);
+
+        if (name.length < 2)      { err.textContent = "Enter your full name (min 2 characters)."; err.style.display = "block"; return; }
+        if (!email.includes("@")) { err.textContent = "Enter a valid email address.";              err.style.display = "block"; return; }
+        if (pass.length < 6)      { err.textContent = "Password must be at least 6 characters.";  err.style.display = "block"; return; }
+
+        setLoading("btn-do-register", true);
+        auth.createUserWithEmailAndPassword(email, pass)
+          .then(function(cred) {
+            // Save display name
+            return cred.user.updateProfile({ displayName: name }).then(function() {
+              // Save extra info to Firestore
+              return db.collection("users").doc(cred.user.uid).set({
+                username: name,
+                email: email,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+              });
+            });
+          })
+          .then(function() {
+            ok.textContent = "Account created! Logging you in...";
+            ok.style.display = "block";
+            setTimeout(function() {
+              closeAuthModal();
+              if (typeof showToast === "function") showToast("Welcome, " + name + "! Account created.", "success");
+            }, 1000);
+          })
+          .catch(function(e) {
+            err.textContent = firebaseErrMsg(e.code);
+            err.style.display = "block";
+            setLoading("btn-do-register", false);
+          });
       }
 
-      // ---- Logout ----
+      // ============================================================
+      // LOGOUT
+      // ============================================================
       function logoutCitizen() {
-        clearMe();
-        refreshHeader();
-        if (typeof showToast === "function") showToast("You have been logged out.", "info");
+        auth.signOut().then(function() {
+          if (typeof showToast === "function") showToast("You have been logged out.", "info");
+        });
       }
 
-      // ---- Header update ----
-      function refreshHeader() {
-        var user    = getMe();
+      // ============================================================
+      // REALTIME AUTH STATE - updates header automatically
+      // ============================================================
+      auth.onAuthStateChanged(function(user) {
         var loginBtn = document.getElementById("btn-citizen-login");
         var card     = document.getElementById("citizen-profile-card");
         if (!loginBtn || !card) return;
+
         if (user) {
+          var name     = user.displayName || user.email;
+          var initials = name.split(" ").map(function(w){ return w.charAt(0); }).join("").toUpperCase().substring(0, 2);
+
           loginBtn.style.display = "none";
           card.style.display     = "flex";
           var av = document.getElementById("citizen-avatar-circle");
           var nm = document.getElementById("citizen-display-name");
           var em = document.getElementById("citizen-display-email");
-          if (av) av.textContent = user.initials || "U";
-          if (nm) nm.textContent = user.username;
+          if (av) av.textContent = initials;
+          if (nm) nm.textContent = name;
           if (em) em.textContent = user.email;
+
+          // Make available to app.js for complaint submission
+          window._loggedInCitizen = { id: user.uid, username: name, email: user.email, initials: initials };
         } else {
           loginBtn.style.display = "flex";
           card.style.display     = "none";
+          window._loggedInCitizen = null;
         }
-      }
-
-      // ---- Overwrite app.js stubs so complaint submission uses new session ----
-      function getLoggedInCitizen() { return getMe(); }
-      function openUserLoginModal(mode) { openAuthModal(mode); }
-      function updateCitizenHeader() { refreshHeader(); }
-
-      // ---- Run on load ----
-      document.addEventListener("DOMContentLoaded", function() {
-        clearMe(); // always start logged out
-        refreshHeader();
       });
+
+      // ============================================================
+      // BRIDGE - so app.js complaint submission works with Firebase user
+      // ============================================================
+      function getLoggedInCitizen()    { return window._loggedInCitizen || null; }
+      function openUserLoginModal(m)   { openAuthModal(m); }
+      function updateCitizenHeader()   { /* handled by onAuthStateChanged */ }
+
+      // ============================================================
+      // FRIENDLY ERROR MESSAGES
+      // ============================================================
+      function firebaseErrMsg(code) {
+        var msgs = {
+          "auth/user-not-found":       "No account found with this email. Please register first.",
+          "auth/wrong-password":       "Incorrect password. Please try again.",
+          "auth/invalid-email":        "Please enter a valid email address.",
+          "auth/email-already-in-use": "This email is already registered. Please login instead.",
+          "auth/weak-password":        "Password is too weak. Use at least 6 characters.",
+          "auth/too-many-requests":    "Too many failed attempts. Please wait a moment and try again.",
+          "auth/network-request-failed": "Network error. Check your internet connection.",
+          "auth/invalid-credential":   "Incorrect email or password. Please try again."
+        };
+        return msgs[code] || "Something went wrong. Please try again.";
+      }
     </script>
+
     <!-- Toast Notification Container -->
     <div id="toast-container" class="toast-container"></div>
   </div>
