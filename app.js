@@ -54,7 +54,7 @@ const INITIAL_COMPLAINTS = [  {    id: "CMP-1001",    title: "Severe Main Road P
 const INITIAL_NOTIFICATIONS = [  { id: "N1", userId: "U101", complaintId: "CMP-1001", message: "Ward Member Suresh Menon added field evaluation remarks on your complaint #CMP-1001.", type: "WARD_APPROVAL", time: "10 mins ago" },  { id: "N2", userId: "U101", complaintId: "CMP-1002", message: "Complaint #CMP-1002 assigned to Electrical Department.", type: "DEPT_ASSIGNMENT", time: "1 hour ago" },  { id: "N3", userId: "U101", complaintId: "CMP-1004", message: "Complaint #CMP-1004 has been marked as RESOLVED.", type: "STATUS_CHANGE", time: "1 day ago" }];
 
 // App State
-let appState = {  currentRole: "CITIZEN",  currentUser: INITIAL_USERS.CITIZEN,  complaints: JSON.parse(localStorage.getItem("jansuraksha_complaints")) || INITIAL_COMPLAINTS,  notifications: JSON.parse(localStorage.getItem("jansuraksha_notifs")) || INITIAL_NOTIFICATIONS,  upvotedIds: JSON.parse(localStorage.getItem("jansuraksha_upvotes")) || ["CMP-1001"],  aiThresholds: { text: 0.40, distanceMeters: 500 },  citizenFilterCategory: "ALL",  citizenFilterTab: "PUBLIC",  searchQuery: "",  selectedPhotoUrl: null,  adminAuthenticated: false /* Admin must login each session */
+let appState = {  currentRole: "CITIZEN",  currentUser: INITIAL_USERS.CITIZEN,  complaints: JSON.parse(localStorage.getItem("jansuraksha_complaints")) || INITIAL_COMPLAINTS,  notifications: JSON.parse(localStorage.getItem("jansuraksha_notifs")) || INITIAL_NOTIFICATIONS,  upvotedIds: JSON.parse(localStorage.getItem("jansuraksha_upvotes")) || ["CMP-1001"],  aiThresholds: { text: 0.40, distanceMeters: 500 },  citizenFilterCategory: "ALL",  citizenFilterTab: "PUBLIC",  groupMode: "GROUPED",  searchQuery: "",  selectedPhotoUrl: null,  adminAuthenticated: false /* Admin must login each session */
 };
 
 // Save to LocalStorage
@@ -234,6 +234,12 @@ document.addEventListener("DOMContentLoaded", () => {
     appState.citizenFilterTab = e.target.value;
     renderCitizenFeed();
   });
+  on("citizen-group-mode", "change", (e) => {
+    appState.groupMode = e.target.value;
+    renderCitizenFeed();
+  });
+  on("input-title", "input", checkForSimilarSubmissions);
+  on("input-category", "change", checkForSimilarSubmissions);
 
   // President Actions
   on("btn-run-ai-merger", "click", runAISimilarityScanner);
@@ -262,13 +268,173 @@ function switchRole(roleKey) {  appState.currentRole = roleKey;  appState.curren
 // ==========================================
 // 4. CITIZEN MODULE LOGIC & UPVOTING
 // ==========================================
+
+// ==========================================
+// CATEGORY METADATA & SIMILARITY GROUPING
+// ==========================================
+const CATEGORY_META = {
+  "Road Damage":   { icon: "fa-road", color: "#f59e0b", label: "Road & Pavement Damage" },
+  "Streetlight":   { icon: "fa-lightbulb", color: "#eab308", label: "Streetlights & Lighting" },
+  "Water Supply":  { icon: "fa-faucet-drip", color: "#06b6d4", label: "Drinking Water Supply" },
+  "Drainage":      { icon: "fa-water", color: "#3b82f6", label: "Stormwater Drainage" },
+  "Garbage":       { icon: "fa-trash-can", color: "#10b981", label: "Waste & Garbage Management" },
+  "Electricity":   { icon: "fa-bolt", color: "#8b5cf6", label: "Electrical & Grid Issues" },
+  "Sewage":        { icon: "fa-biohazard", color: "#ec4899", label: "Sewage & Sanitation" },
+  "Public Toilet": { icon: "fa-restroom", color: "#14b8a6", label: "Public Restrooms" },
+  "Tree Removal":  { icon: "fa-tree", color: "#84cc16", label: "Fallen Trees & Overgrowth" },
+  "Others":        { icon: "fa-circle-exclamation", color: "#94a3b8", label: "General & Miscellaneous" }
+};
+
+// Finds similar complaints within the same category
+function findSimilarComplaints(c, pool) {
+  if (!pool) pool = appState.complaints;
+  var targetWords = (c.title + " " + (c.description || "")).toLowerCase().split(/\W+/).filter(function(w) { return w.length > 3; });
+  return pool.filter(function(other) {
+    if (other.id === c.id || other.isMerged) return false;
+    if (other.category !== c.category) return false;
+
+    // Check textual Jaccard similarity
+    var textSim = calculateJaccardSimilarity(c.title + " " + (c.description || ""), other.title + " " + (other.description || ""));
+    if (textSim >= 0.20) return true;
+
+    // Check matching keywords in same ward
+    if (other.wardId === c.wardId) {
+      var otherText = (other.title + " " + (other.description || "")).toLowerCase();
+      var common = targetWords.filter(function(w) { return otherText.includes(w); });
+      if (common.length >= 2) return true;
+    }
+
+    // Check geographic proximity (< 1km)
+    if (c.lat && c.lng && other.lat && other.lng) {
+      var dist = calculateHaversineDistance(c.lat, c.lng, other.lat, other.lng);
+      if (dist <= 1000 && textSim >= 0.12) return true;
+    }
+    return false;
+  });
+}
+
+// Toggle similar complaints dropdown in a card
+function toggleSimilarExpand(complaintId) {
+  var el = document.getElementById("cluster-items-" + complaintId);
+  var ch = document.getElementById("cluster-chevron-" + complaintId);
+  if (el) {
+    var isHidden = el.classList.toggle("hidden");
+    if (ch) {
+      ch.style.transform = isHidden ? "rotate(0deg)" : "rotate(180deg)";
+    }
+  }
+}
+
+// Real-time check in Submit Grievance modal for existing similar complaints
+function checkForSimilarSubmissions() {
+  var titleEl = document.getElementById("input-title");
+  var catEl = document.getElementById("input-category");
+  var box = document.getElementById("submit-similar-box");
+  if (!titleEl || !catEl || !box) return;
+
+  var title = titleEl.value.trim();
+  var category = catEl.value;
+  if (!title || title.length < 4) {
+    box.classList.add("hidden");
+    box.innerHTML = "";
+    return;
+  }
+
+  var temp = { id: "TEMP", title: title, description: title, category: category, wardId: "" };
+  var matches = findSimilarComplaints(temp, appState.complaints);
+  if (matches.length === 0) {
+    box.classList.add("hidden");
+    box.innerHTML = "";
+    return;
+  }
+
+  box.classList.remove("hidden");
+  box.innerHTML = '<div class="ssb-header"><i class="fa-solid fa-lightbulb"></i> ' + matches.length + ' Similar Grievance' + (matches.length > 1 ? 's' : '') + ' found under "' + category + '":</div>' +
+    matches.slice(0, 3).map(function(m) {
+      return '<div class="ssb-item">' +
+        '<div>' +
+          '<span style="font-weight:800;color:#60a5fa;margin-right:6px;">#' + m.id + '</span>' +
+          '<span class="ssb-title">' + m.title + '</span>' +
+          '<div style="font-size:0.72rem;color:#94a3b8;margin-top:2px;"><i class="fa-solid fa-circle-up"></i> ' + m.upvotes + ' community upvotes • ' + m.location + '</div>' +
+        '</div>' +
+        '<button type="button" class="ssb-btn" onclick="upvoteExistingFromModal(\'' + m.id + '\')"><i class="fa-solid fa-circle-up"></i> Upvote Existing</button>' +
+      '</div>';
+    }).join('');
+}
+
+function upvoteExistingFromModal(id) {
+  toggleUpvote(id);
+  closeAllModals();
+  showToast("Upvoted existing grievance #" + id + "! No duplicate created.", "success");
+}
+
+// Helper to render an individual complaint card
+function createComplaintCardHtml(c, pool) {
+  var isUpvoted = appState.upvotedIds.includes(c.id);
+  var similarList = findSimilarComplaints(c, pool);
+
+  var similarClusterHtml = "";
+  if (similarList.length > 0) {
+    similarClusterHtml = '<div class="card-similar-cluster">' +
+      '<div class="cluster-summary-bar" onclick="toggleSimilarExpand(\'' + c.id + '\')">' +
+        '<span><i class="fa-solid fa-layer-group"></i> <strong>' + similarList.length + ' Similar Grievance' + (similarList.length > 1 ? 's' : '') + ' in this Category</strong></span>' +
+        '<span class="cluster-toggle-btn"><i class="fa-solid fa-chevron-down" id="cluster-chevron-' + c.id + '"></i></span>' +
+      '</div>' +
+      '<div id="cluster-items-' + c.id + '" class="cluster-items hidden">' +
+        similarList.map(function(s) {
+          return '<div class="cluster-item-row">' +
+            '<div class="cir-info">' +
+              '<div><span class="cir-id">#' + s.id + '</span><span class="cir-title">' + s.title + '</span></div>' +
+              '<span class="cir-author"><i class="fa-solid fa-user-circle"></i> ' + (s.citizenName || 'Citizen') + ' • <i class="fa-solid fa-location-dot"></i> ' + s.location + '</span>' +
+            '</div>' +
+            '<button class="cir-upvote-btn" onclick="toggleUpvote(\'' + s.id + '\')">' +
+              '<i class="fa-solid fa-circle-up"></i> ' + s.upvotes +
+            '</button>' +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+  }
+
+  return '<div class="complaint-card">' +
+    '<div class="card-image-wrap">' +
+      '<img src="' + c.photoUrl + '" alt="' + c.title + '" />' +
+      '<span class="category-tag"><i class="fa-solid fa-tag"></i> ' + c.category + '</span>' +
+      '<span class="urgency-tag ' + c.urgency + '">' + c.urgency + '</span>' +
+    '</div>' +
+    '<div class="card-body">' +
+      '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">' +
+        '<span style="font-size:0.72rem; color:#64748b; font-weight:700;">#' + c.id + '</span>' +
+        '<span class="status-pill status-' + c.status + '">' + formatStatus(c.status) + '</span>' +
+      '</div>' +
+      '<h3 class="card-title">' + c.title + '</h3>' +
+      '<div class="card-meta">' +
+        '<span><i class="fa-solid fa-user-circle"></i> <strong>' + (c.citizenName || 'Citizen') + '</strong></span>' +
+        '<span><i class="fa-solid fa-location-dot"></i> ' + c.location + '</span>' +
+        '<span><i class="fa-solid fa-layer-group"></i> ' + c.wardName + '</span>' +
+      '</div>' +
+      '<p class="card-desc">' + c.description + '</p>' +
+      similarClusterHtml +
+      '<div class="card-footer">' +
+        '<button class="btn-upvote ' + (isUpvoted ? 'upvoted' : '') + '" onclick="toggleUpvote(\'' + c.id + '\')">' +
+          '<i class="fa-solid fa-circle-up"></i> ' + c.upvotes + ' Upvotes' +
+        '</button>' +
+        '<button class="btn-track" onclick="openTrackingModal(\'' + c.id + '\')">' +
+          '<i class="fa-solid fa-timeline"></i> Track Status' +
+        '</button>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+
 function renderCitizenFeed() {
-  const grid = document.getElementById("citizen-complaints-grid");
-  if (!grid) return;
-  grid.innerHTML = "";
+  const container = document.getElementById("citizen-complaints-grid");
+  if (!container) return;
+  container.innerHTML = "";
   let list = appState.complaints.filter(c => !c.isMerged);
 
-  /* Always sort newest first so new grievances appear right at the top of the homepage */
+  /* Always sort newest first */
   list.sort(function(a, b) {
     var timeA = a.createdAt ? new Date(a.createdAt.replace(" ", "T")).getTime() : 0;
     var timeB = b.createdAt ? new Date(b.createdAt.replace(" ", "T")).getTime() : 0;
@@ -284,11 +450,88 @@ function renderCitizenFeed() {
       return (currentUid && c.citizenId === currentUid) ||
              (currentEmail && c.citizenEmail && c.citizenEmail.toLowerCase() === currentEmail.toLowerCase());
     });
-  }  /* Filter by Category */  if (appState.citizenFilterCategory !== "ALL") {    list = list.filter(c => c.category === appState.citizenFilterCategory);  }  /* Search Query */  if (appState.searchQuery) {    list = list.filter(c =>       c.title.toLowerCase().includes(appState.searchQuery) ||      c.description.toLowerCase().includes(appState.searchQuery) ||      c.location.toLowerCase().includes(appState.searchQuery)    );  }  if (list.length === 0) {    grid.innerHTML = `      <div class="glass-panel text-center py-8 full-width" style="grid-column: 1 / -1; padding: 40px;">        <i class="fa-solid fa-folder-open" style="font-size: 2.5rem; color: #64748b; margin-bottom: 12px;"></i>        <h4 style="color: #94a3b8;">No Grievances Found</h4>        <p style="color: #64748b; font-size: 0.85rem;">Try adjusting search filters or file a new grievance.</p>      </div>    `;    return;  }  list.forEach(c => {    const isUpvoted = appState.upvotedIds.includes(c.id);    const score = calculatePriorityScore(c);    const card = document.createElement("div");    card.className = "complaint-card";    card.innerHTML = `      <div class="card-image-wrap">        <img src="${c.photoUrl}" alt="${c.title}" />        <span class="category-tag"><i class="fa-solid fa-tag"></i> ${c.category}</span>        <span class="urgency-tag ${c.urgency}">${c.urgency}</span>      </div>      <div class="card-body">        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">          <span style="font-size: 0.72rem; color: #64748b; font-weight: 700;">#${c.id}</span>          <span class="status-pill status-${c.status}">${formatStatus(c.status)}</span>        </div>        <h3 class="card-title">${c.title}</h3>        <div class="card-meta">
-          <span><i class="fa-solid fa-user-circle"></i> <strong>${c.citizenName || 'Citizen'}</strong></span>
-          <span><i class="fa-solid fa-location-dot"></i> ${c.location}</span>
-          <span><i class="fa-solid fa-layer-group"></i> ${c.wardName}</span>
-        </div>        <p class="card-desc">${c.description}</p>                <div class="card-footer">          <button class="btn-upvote ${isUpvoted ? 'upvoted' : ''}" onclick="toggleUpvote('${c.id}')">            <i class="fa-solid fa-circle-up"></i> ${c.upvotes} Upvotes          </button>                    <button class="btn-track" onclick="openTrackingModal('${c.id}')">            <i class="fa-solid fa-timeline"></i> Track Status          </button>        </div>      </div>    `;    grid.appendChild(card);  });}function toggleUpvote(complaintId) {
+  }
+
+  /* Filter by Category */
+  if (appState.citizenFilterCategory !== "ALL") {
+    list = list.filter(c => c.category === appState.citizenFilterCategory);
+  }
+
+  /* Search Query */
+  if (appState.searchQuery) {
+    list = list.filter(c => 
+      c.title.toLowerCase().includes(appState.searchQuery) ||
+      c.description.toLowerCase().includes(appState.searchQuery) ||
+      c.location.toLowerCase().includes(appState.searchQuery)
+    );
+  }
+
+  if (list.length === 0) {
+    container.innerHTML = '<div class="glass-panel text-center py-8 full-width" style="grid-column: 1 / -1; padding: 40px; width: 100%;">' +
+      '<i class="fa-solid fa-folder-open" style="font-size: 2.5rem; color: #64748b; margin-bottom: 12px; display:block;"></i>' +
+      '<h4 style="color: #94a3b8;">No Grievances Found</h4>' +
+      '<p style="color: #64748b; font-size: 0.85rem; margin-top:4px;">Try adjusting search filters or file a new grievance.</p>' +
+    '</div>';
+    return;
+  }
+
+  // 1. FLAT VIEW MODE
+  if (appState.groupMode === "FLAT") {
+    var gridDiv = document.createElement("div");
+    gridDiv.className = "complaints-grid";
+    gridDiv.innerHTML = list.map(c => createComplaintCardHtml(c, list)).join('');
+    container.appendChild(gridDiv);
+    return;
+  }
+
+  // 2. CATEGORY GROUPED VIEW MODE (Default)
+  // Group complaints by their category
+  var categories = {};
+  list.forEach(function(c) {
+    var catName = c.category || "Others";
+    if (!categories[catName]) categories[catName] = [];
+    categories[catName].push(c);
+  });
+
+  // Render each category section
+  Object.keys(categories).forEach(function(catName) {
+    var catComplaints = categories[catName];
+    var meta = CATEGORY_META[catName] || { icon: "fa-tag", color: "#60a5fa", label: catName };
+    var totalVotes = catComplaints.reduce(function(sum, item) { return sum + (item.upvotes || 0); }, 0);
+
+    // Calculate how many complaints in this category have similar counterparts
+    var similarCount = 0;
+    catComplaints.forEach(function(c) {
+      if (findSimilarComplaints(c, catComplaints).length > 0) similarCount++;
+    });
+
+    var section = document.createElement("div");
+    section.className = "category-feed-section";
+    section.innerHTML = 
+      '<div class="category-section-header">' +
+        '<div class="csh-left">' +
+          '<div class="csh-icon" style="background: ' + meta.color + '20; color: ' + meta.color + ';">' +
+            '<i class="fa-solid ' + meta.icon + '"></i>' +
+          '</div>' +
+          '<div>' +
+            '<h3 class="csh-title">' + meta.label + '</h3>' +
+            '<span class="csh-subtitle">' + catComplaints.length + ' active grievance' + (catComplaints.length > 1 ? 's' : '') + ' under this category</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="csh-stats">' +
+          '<span class="csh-stat-pill"><i class="fa-solid fa-circle-up"></i> ' + totalVotes + ' Total Upvotes</span>' +
+          (similarCount > 0 ? '<span class="csh-cluster-pill"><i class="fa-solid fa-layer-group"></i> ' + similarCount + ' Similar Reports Grouped</span>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="complaints-grid">' +
+        catComplaints.map(function(c) { return createComplaintCardHtml(c, catComplaints); }).join('') +
+      '</div>';
+
+    container.appendChild(section);
+  });
+}
+
+function toggleUpvote(complaintId) {
   const complaint = appState.complaints.find(c => c.id === complaintId);
   if (!complaint) return;
   const idx = appState.upvotedIds.indexOf(complaintId);
