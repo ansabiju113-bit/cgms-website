@@ -115,7 +115,7 @@
             <p>File grievances, upload proof photos, track real-time resolution stages, and upvote neighborhood issues to prioritize public action.</p>
           </div>
           <div class="hero-cta">
-            <button id="btn-open-submit-modal" class="btn-primary-gradient">
+            <button id="btn-open-submit-modal" class="btn-primary-gradient" onclick="openSubmitModal()">
               <i class="fa-solid fa-plus-circle"></i> File New Grievance
             </button>
           </div>
@@ -396,6 +396,14 @@
           <button class="close-modal-btn">&times;</button>
         </div>
         <form id="form-submit-complaint" class="modal-body">
+          <!-- Citizen Account Link Badge -->
+          <div id="submit-citizen-badge" style="padding: 10px 14px; margin-bottom: 16px; border-radius: 10px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.25); display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-user-circle" style="color: #818cf8; font-size: 1.15rem;"></i>
+              <span id="submit-citizen-text" style="color: #f1f5f9;">Posting as: <span style="color:#f87171;">Guest (Not logged in)</span></span>
+            </div>
+            <button type="button" id="submit-citizen-btn" onclick="openAuthModal('login')" style="background: rgba(99,102,241,0.2); border: 1px solid rgba(99,102,241,0.4); color: #818cf8; padding: 5px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer;">Login / Register</button>
+          </div>
           <div class="form-group">
             <label>Grievance Title <span class="req">*</span></label>
             <input type="text" id="input-title" required placeholder="e.g. Major Water Leakage on Temple Street" />
