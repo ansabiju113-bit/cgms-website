@@ -639,7 +639,7 @@
     <!-- Firebase SDK (compat version - easy to use) -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
 
     <script>
       // ============================================================
@@ -660,7 +660,7 @@
       // Init Firebase
       firebase.initializeApp(firebaseConfig);
       const auth = firebase.auth();
-      const db   = firebase.firestore();
+
 
       // ============================================================
       // AUTH MODAL HELPERS
@@ -748,15 +748,7 @@
         setLoading("btn-do-register", true);
         auth.createUserWithEmailAndPassword(email, pass)
           .then(function(cred) {
-            // Save display name
-            return cred.user.updateProfile({ displayName: name }).then(function() {
-              // Save extra info to Firestore
-              return db.collection("users").doc(cred.user.uid).set({
-                username: name,
-                email: email,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-              });
-            });
+            return cred.user.updateProfile({ displayName: name });
           })
           .then(function() {
             ok.textContent = "Account created! Logging you in...";
