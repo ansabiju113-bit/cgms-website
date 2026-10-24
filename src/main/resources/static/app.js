@@ -72,7 +72,10 @@ const INITIAL_COMPLAINTS = [  {    id: "CMP-1001",    title: "Severe Main Road P
 const INITIAL_NOTIFICATIONS = [  { id: "N1", userId: "U101", complaintId: "CMP-1001", message: "Ward Member Suresh Menon added field evaluation remarks on your complaint #CMP-1001.", type: "WARD_APPROVAL", time: "10 mins ago" },  { id: "N2", userId: "U101", complaintId: "CMP-1002", message: "Complaint #CMP-1002 assigned to Electrical Department.", type: "DEPT_ASSIGNMENT", time: "1 hour ago" },  { id: "N3", userId: "U101", complaintId: "CMP-1004", message: "Complaint #CMP-1004 has been marked as RESOLVED.", type: "STATUS_CHANGE", time: "1 day ago" }];
 
 // App State
-let appState = {  currentRole: "CITIZEN",  currentUser: INITIAL_USERS.CITIZEN,  complaints: JSON.parse(localStorage.getItem("jansuraksha_complaints")) || INITIAL_COMPLAINTS,  notifications: JSON.parse(localStorage.getItem("jansuraksha_notifs")) || INITIAL_NOTIFICATIONS,  upvotedIds: JSON.parse(localStorage.getItem("jansuraksha_upvotes")) || ["CMP-1001"],  aiThresholds: { text: 0.40, distanceMeters: 500 },  citizenFilterCategory: "ALL",  citizenFilterTab: "PUBLIC",  groupMode: "GROUPED",  searchQuery: "",  selectedPhotoUrl: null,  adminAuthenticated: false /* Admin must login each session */
+let appState = {  currentRole: "CITIZEN",  currentUser: INITIAL_USERS.CITIZEN,  complaints: JSON.parse(localStorage.getItem("jansuraksha_complaints")) || INITIAL_COMPLAINTS,  notifications: JSON.parse(localStorage.getItem("jansuraksha_notifs")) || INITIAL_NOTIFICATIONS,  upvotedIds: JSON.parse(localStorage.getItem("jansuraksha_upvotes")) || ["CMP-1001"],  aiThresholds: { text: 0.40, distanceMeters: 500 },  citizenFilterCategory: "ALL",  citizenFilterTab: "PUBLIC",  groupMode: "GROUPED",  searchQuery: "",  selectedPhotoUrl: null,  adminAuthenticated: false, /* Admin must login each session */
+  wardMemberFilterWard: "ALL",
+  presidentSortMode: "NEWEST",
+  presidentWardFilter: "ALL"
 };
 
 // Save to LocalStorage
@@ -158,7 +161,35 @@ function initFirestoreSync() {
   }
 }
 
-function calculatePriorityScore(c) {  const categoryWeights = {    "Electricity": 1.5, "Sewage": 1.5, "Water Supply": 1.5,    "Road Damage": 1.3, "Drainage": 1.3,    "Tree Removal": 1.2, "Garbage": 1.2,    "Streetlight": 1.1, "Public Toilet": 1.1, "Others": 1.0  };  const urgencyMultipliers = { "CRITICAL": 2.0, "HIGH": 1.5, "MEDIUM": 1.2, "LOW": 1.0 };    const baseWeight = categoryWeights[c.category] || 1.0;  const mult = urgencyMultipliers[c.urgency] || 1.0;    return ((baseWeight * mult * 10) + (c.upvotes * 2.5)).toFixed(1);}
+function calculatePriorityScore(c) {
+  if (!c) return "0.0";
+  const categoryWeights = {
+    "Electricity": 1.5, "Sewage": 1.5, "Water Supply": 1.5,
+    "Road Damage": 1.3, "Drainage": 1.3,
+    "Tree Removal": 1.2, "Garbage": 1.2,
+    "Streetlight": 1.1, "Public Toilet": 1.1, "Others": 1.0
+  };
+  const urgencyMultipliers = { "CRITICAL": 2.0, "HIGH": 1.5, "MEDIUM": 1.2, "LOW": 1.0 };
+  const baseWeight = categoryWeights[c.category] || 1.0;
+  const mult = urgencyMultipliers[c.urgency] || 1.0;
+  const upvotes = typeof c.upvotes === "number" ? c.upvotes : (parseInt(c.upvotes, 10) || 0);
+  return ((baseWeight * mult * 10) + (upvotes * 2.5)).toFixed(1);
+}
+
+function changeWardFilter(wardId) {
+  appState.wardMemberFilterWard = wardId;
+  renderWardMemberPortal();
+}
+
+function changePresSort(sortMode) {
+  appState.presidentSortMode = sortMode;
+  renderPresidentPortal();
+}
+
+function changePresWard(wardId) {
+  appState.presidentWardFilter = wardId;
+  renderPresidentPortal();
+}
 
 // ==========================================
 // 2. DOM INITIALIZATION & EVENT LISTENERS
@@ -642,17 +673,230 @@ function openSubmitModal() {
     var m = c.id && c.id.match(/^CMP-(\d+)$/);
     return m ? Math.max(max, parseInt(m[1], 10)) : max;
   }, 1000);
-  const newId = `CMP-${maxNum + 1}`;  const newComplaint = {    id: newId,    title,    category,    description,    location,    lat: 10.5230 + (Math.random() * 0.01),    lng: 76.2140 + (Math.random() * 0.01),    wardId,    wardName: wardNames[wardId] || "Ward 1",    citizenId: loggedIn.id,    citizenName: loggedIn.username,    citizenEmail: loggedIn.email,    urgency,    status: "APPROVED",    upvotes: 1,    assignedDepartment: "Unassigned",    wardRemarks: "Verified and published directly on Public Feed.",     photoUrl: appState.selectedPhotoUrl || fallbackPhotos[category] || "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=600",    createdAt: new Date().toISOString().replace('T', ' ').substring(0, 16),    isMerged: false,    childIds: []  };  appState.complaints.unshift(newComplaint);  appState.upvotedIds.push(newId);  syncComplaintToFirestore(newComplaint);  /* Automatically ensure citizen is on Public Feed to see their posted grievance immediately */  appState.currentRole = "CITIZEN";  appState.citizenFilterTab = "PUBLIC";  appState.citizenFilterCategory = "ALL";  appState.searchQuery = "";  var tabSel = document.getElementById("citizen-tab-filter");  if (tabSel) tabSel.value = "PUBLIC";  var catSel = document.getElementById("citizen-category-filter");  if (catSel) catSel.value = "ALL";  var sInp = document.getElementById("search-input");  if (sInp) sInp.value = "";  /* Notify the citizen */  addNotification(loggedIn.id, newId, `Grievance #${newId} is live on the home page! Public community upvoting active.`, "STATUS_CHANGE");  /* Notify admin (U401) */  addNotification("U401", newId, `📢 Grievance #${newId} posted by ${loggedIn.username} (${loggedIn.email}): "${title}" (${category} • ${urgency})`, "NEW_COMPLAINT");  persistState();  closeAllModals();  renderRoleView();  showToast(`Grievance #${newId} posted! Live on homepage feed.`, "success");    /* Reset Form */  document.getElementById("form-submit-complaint").reset();  removePhotoSelection();}
+  const newId = `CMP-${maxNum + 1}`;  const newComplaint = {    id: newId,    title,    category,    description,    location,    lat: 10.5230 + (Math.random() * 0.01),    lng: 76.2140 + (Math.random() * 0.01),    wardId,    wardName: wardNames[wardId] || "Ward 1",    citizenId: loggedIn.id,    citizenName: loggedIn.username,    citizenEmail: loggedIn.email,    urgency,    status: "SUBMITTED",    upvotes: 1,    assignedDepartment: "Unassigned",    wardRemarks: "Pending Ward Member field assessment. Published live on Public Feed.",      photoUrl: appState.selectedPhotoUrl || fallbackPhotos[category] || "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=600",    createdAt: new Date().toISOString().replace('T', ' ').substring(0, 16),    isMerged: false,    childIds: []  };  appState.complaints.unshift(newComplaint);  appState.upvotedIds.push(newId);  syncComplaintToFirestore(newComplaint);  /* Automatically ensure citizen is on Public Feed to see their posted grievance immediately */  appState.currentRole = "CITIZEN";  appState.citizenFilterTab = "PUBLIC";  appState.citizenFilterCategory = "ALL";  appState.searchQuery = "";  var tabSel = document.getElementById("citizen-tab-filter");  if (tabSel) tabSel.value = "PUBLIC";  var catSel = document.getElementById("citizen-category-filter");  if (catSel) catSel.value = "ALL";  var sInp = document.getElementById("search-input");  if (sInp) sInp.value = "";  /* Notify the citizen */  addNotification(loggedIn.id, newId, `Grievance #${newId} is live on the home page! Public community upvoting active.`, "STATUS_CHANGE");  /* Notify admin (U401) */  addNotification("U401", newId, `📢 Grievance #${newId} posted by ${loggedIn.username} (${loggedIn.email}): "${title}" (${category} • ${urgency})`, "NEW_COMPLAINT");  persistState();  closeAllModals();  renderRoleView();  showToast(`Grievance #${newId} posted! Live on homepage feed.`, "success");    /* Reset Form */  document.getElementById("form-submit-complaint").reset();  removePhotoSelection();}
 
 // ==========================================
 // 6. WARD MEMBER PORTAL LOGIC
 // ==========================================
-function renderWardMemberPortal() {  const pending = appState.complaints.filter(c => c.wardId === "W1" && c.status === "SUBMITTED");  const approved = appState.complaints.filter(c => c.wardId === "W1" && (c.status === "APPROVED" || c.status === "IN_PROGRESS" || c.status === "RESOLVED"));  const rejected = appState.complaints.filter(c => c.wardId === "W1" && c.status === "REJECTED");  document.getElementById("ward-pending-count").innerText = pending.length;  document.getElementById("ward-approved-count").innerText = approved.length;  document.getElementById("ward-rejected-count").innerText = rejected.length;  const container = document.getElementById("ward-complaints-list");  container.innerHTML = "";  const wardComplaints = appState.complaints.filter(c => c.wardId === "W1" && !c.isMerged);  if (wardComplaints.length === 0) {    container.innerHTML = `<div class="p-6 text-center text-muted">No grievances assigned to Ward 1 yet.</div>`;    return;  }  wardComplaints.forEach(c => {    const item = document.createElement("div");    item.className = "ward-item";    item.innerHTML = `      <div class="ward-item-details">        <div style="display:flex; gap:10px; align-items:center; margin-bottom:4px;">          <span style="font-weight:800; color:#3b82f6;">#${c.id}</span>          <span class="status-pill status-${c.status}">${formatStatus(c.status)}</span>          <span class="urgency-tag ${c.urgency}">${c.urgency}</span>        </div>        <h4 class="ward-item-title">${c.title}</h4>        <div class="ward-item-sub">          <span><i class="fa-solid fa-user-circle"></i> <strong>${c.citizenName}</strong>${c.citizenEmail ? ` <em class="acr-email">${c.citizenEmail}</em>` : ""}</span>          <span><i class="fa-solid fa-location-dot"></i> ${c.location}</span>          <span><i class="fa-solid fa-circle-up"></i> ${c.upvotes} Upvotes</span>        </div>        ${c.wardRemarks ? `<p style="font-size:0.8rem; color:#a78bfa; margin-top:6px;"><i class="fa-solid fa-comment-dots"></i> Remark: ${c.wardRemarks}</p>` : ''}      </div>      <div class="ward-actions">        ${c.status === "SUBMITTED" ? `          <button class="btn-sm-approve" onclick="wardApprove('${c.id}')"><i class="fa-solid fa-check"></i> Approve</button>          <button class="btn-sm-reject" onclick="wardReject('${c.id}')"><i class="fa-solid fa-xmark"></i> Reject</button>        ` : `<span style="font-size:0.8rem; color:#94a3b8; font-weight:600;">Assessment Recorded</span>`}      </div>    `;    container.appendChild(item);  });}function wardApprove(id) {  const remarks = prompt("Enter Field Assessment Remarks for Approval:", "Field verified by Ward Member. Genuine grievance.");  if (remarks === null) return;  const complaint = appState.complaints.find(c => c.id === id);  if (complaint) {    complaint.status = "APPROVED";    complaint.wardRemarks = remarks;    syncComplaintToFirestore(complaint);    addNotification(complaint.citizenId, id, `Ward Member approved grievance #${id}. Remarks: "${remarks}"`, "WARD_APPROVAL");    persistState();    renderWardMemberPortal();    showToast(`Approved #${id} and forwarded to President Dashboard`, "success");  }}function wardReject(id) {  const remarks = prompt("Enter Reason for Rejection:", "Invalid or duplicate claim upon physical inspection.");  if (remarks === null) return;  const complaint = appState.complaints.find(c => c.id === id);  if (complaint) {    complaint.status = "REJECTED";    complaint.wardRemarks = remarks;    syncComplaintToFirestore(complaint);    addNotification(complaint.citizenId, id, `Grievance #${id} was rejected by Ward Member. Reason: "${remarks}"`, "STATUS_CHANGE");    persistState();    renderWardMemberPortal();    showToast(`Rejected #${id}`, "info");  }}
+function renderWardMemberPortal() {
+  const selectedWard = appState.wardMemberFilterWard || "ALL";
+  const wardSelect = document.getElementById("ward-filter-select");
+  if (wardSelect) wardSelect.value = selectedWard;
+
+  let wardComplaints = appState.complaints.filter(c => !c.isMerged);
+  if (selectedWard !== "ALL") {
+    wardComplaints = wardComplaints.filter(c => c.wardId === selectedWard);
+  }
+
+  // Pending review includes SUBMITTED, UNDER_WARD_REVIEW, or complaints awaiting ward member remarks
+  const pending = wardComplaints.filter(c => 
+    c.status === "SUBMITTED" || 
+    c.status === "UNDER_WARD_REVIEW" || 
+    !c.wardRemarks || 
+    c.wardRemarks.includes("Pending Ward Member") ||
+    c.wardRemarks.includes("Verified and published directly")
+  );
+  const approved = wardComplaints.filter(c => 
+    (c.status === "APPROVED" || c.status === "IN_PROGRESS" || c.status === "RESOLVED") &&
+    c.wardRemarks && !c.wardRemarks.includes("Pending Ward Member") && !c.wardRemarks.includes("Verified and published directly")
+  );
+  const rejected = wardComplaints.filter(c => c.status === "REJECTED");
+
+  const pendingEl = document.getElementById("ward-pending-count");
+  const approvedEl = document.getElementById("ward-approved-count");
+  const rejectedEl = document.getElementById("ward-rejected-count");
+  if (pendingEl) pendingEl.innerText = pending.length;
+  if (approvedEl) approvedEl.innerText = approved.length;
+  if (rejectedEl) rejectedEl.innerText = rejected.length;
+
+  const container = document.getElementById("ward-complaints-list");
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (wardComplaints.length === 0) {
+    const wardNameStr = selectedWard === "ALL" ? "any ward" : selectedWard;
+    container.innerHTML = `<div class="p-6 text-center text-muted" style="padding: 30px; color: #94a3b8;"><i class="fa-solid fa-folder-open" style="font-size:2rem; margin-bottom:8px; display:block;"></i>No grievances found for ${wardNameStr}.</div>`;
+    return;
+  }
+
+  // Always sort newest first
+  wardComplaints.sort(function(a, b) {
+    var timeA = a.createdAt ? new Date(a.createdAt.replace(" ", "T")).getTime() : 0;
+    var timeB = b.createdAt ? new Date(b.createdAt.replace(" ", "T")).getTime() : 0;
+    return (isNaN(timeB) ? 0 : timeB) - (isNaN(timeA) ? 0 : timeA);
+  });
+
+  wardComplaints.forEach(c => {
+    const item = document.createElement("div");
+    item.className = "ward-item";
+    const isNew = c.status === "SUBMITTED" || !c.wardRemarks || c.wardRemarks.includes("Pending");
+    const canAssess = c.status === "SUBMITTED" || c.status === "UNDER_WARD_REVIEW" || !c.wardRemarks || c.wardRemarks.includes("Pending") || c.wardRemarks.includes("Verified and published directly");
+
+    item.innerHTML = `
+      <div class="ward-item-details">
+        <div style="display:flex; gap:10px; align-items:center; margin-bottom:4px; flex-wrap:wrap;">
+          ${isNew ? `<span class="acr-new-badge"><i class="fa-solid fa-bolt"></i> NEW</span>` : ""}
+          <span style="font-weight:800; color:#3b82f6;">#${c.id}</span>
+          <span class="status-pill status-${c.status || 'SUBMITTED'}">${formatStatus(c.status || 'SUBMITTED')}</span>
+          <span class="urgency-tag ${c.urgency || 'MEDIUM'}">${c.urgency || 'MEDIUM'}</span>
+          <span style="font-size:0.75rem; background:rgba(255,255,255,0.06); padding:2px 8px; border-radius:6px; color:#94a3b8;">
+            <i class="fa-solid fa-map-pin"></i> ${c.wardName || c.wardId || 'Ward'}
+          </span>
+        </div>
+        <h4 class="ward-item-title">${c.title}</h4>
+        <div class="ward-item-sub">
+          <span><i class="fa-solid fa-user-circle"></i> <strong>${c.citizenName || 'Citizen'}</strong>${c.citizenEmail ? ` <em class="acr-email">${c.citizenEmail}</em>` : ""}</span>
+          <span><i class="fa-solid fa-location-dot"></i> ${c.location || 'Location'}</span>
+          <span><i class="fa-solid fa-tag"></i> ${c.category || 'General'}</span>
+          <span><i class="fa-solid fa-circle-up"></i> ${c.upvotes || 0} Upvotes</span>
+          <span><i class="fa-solid fa-clock"></i> ${c.createdAt || ''}</span>
+        </div>
+        ${c.wardRemarks ? `<p style="font-size:0.8rem; color:#a78bfa; margin-top:6px;"><i class="fa-solid fa-comment-dots"></i> Remark: ${c.wardRemarks}</p>` : ''}
+      </div>
+      <div class="ward-actions">
+        ${canAssess ? `
+          <button class="btn-sm-approve" onclick="wardApprove('${c.id}')"><i class="fa-solid fa-check"></i> Field Assessment / Approve</button>
+          <button class="btn-sm-reject" onclick="wardReject('${c.id}')"><i class="fa-solid fa-xmark"></i> Reject</button>
+        ` : `<span style="font-size:0.8rem; color:#94a3b8; font-weight:600;"><i class="fa-solid fa-clipboard-check"></i> Assessment Recorded</span>`}
+      </div>
+    `;
+    container.appendChild(item);
+  });
+}
+
+function wardApprove(id) {
+  const remarks = prompt("Enter Field Assessment Remarks for Approval:", "Field verified by Ward Member. Genuine grievance.");
+  if (remarks === null) return;
+  const complaint = appState.complaints.find(c => c.id === id);
+  if (complaint) {
+    complaint.status = "APPROVED";
+    complaint.wardRemarks = remarks;
+    syncComplaintToFirestore(complaint);
+    addNotification(complaint.citizenId, id, `Ward Member approved grievance #${id}. Remarks: "${remarks}"`, "WARD_APPROVAL");
+    persistState();
+    renderWardMemberPortal();
+    showToast(`Approved #${id} and forwarded to President Dashboard`, "success");
+  }
+}
+
+function wardReject(id) {
+  const remarks = prompt("Enter Reason for Rejection:", "Invalid or duplicate claim upon physical inspection.");
+  if (remarks === null) return;
+  const complaint = appState.complaints.find(c => c.id === id);
+  if (complaint) {
+    complaint.status = "REJECTED";
+    complaint.wardRemarks = remarks;
+    syncComplaintToFirestore(complaint);
+    addNotification(complaint.citizenId, id, `Grievance #${id} was rejected by Ward Member. Reason: "${remarks}"`, "STATUS_CHANGE");
+    persistState();
+    renderWardMemberPortal();
+    showToast(`Rejected #${id}`, "info");
+  }
+}
 
 // ==========================================
 // 7. PANCHAYATH PRESIDENT PORTAL & DEPT ASSIGNMENT
 // ==========================================
-function renderPresidentPortal() {  const total = appState.complaints.length;  const critical = appState.complaints.filter(c => c.urgency === "CRITICAL" || c.upvotes >= 15).length;  const inProgress = appState.complaints.filter(c => c.status === "IN_PROGRESS").length;  const merged = appState.complaints.filter(c => c.isMerged).length;  document.getElementById("pres-total-count").innerText = total;  document.getElementById("pres-critical-count").innerText = critical;  document.getElementById("pres-inprogress-count").innerText = inProgress;  document.getElementById("pres-merged-count").innerText = merged;  const tbody = document.getElementById("president-table-body");  tbody.innerHTML = "";  /* Sort complaints by Smart Priority Score descending */  const sorted = [...appState.complaints].sort((a, b) => calculatePriorityScore(b) - calculatePriorityScore(a));  sorted.forEach(c => {    const score = calculatePriorityScore(c);    const tr = document.createElement("tr");    tr.innerHTML = `      <td style="font-weight:800; color:#60a5fa;">#${c.id}</td>      <td>        <div style="font-weight:700;">${c.title}</div>        <div style="font-size:0.75rem; color:#94a3b8;">${c.category}</div>      </td>      <td>${c.wardName}</td>      <td><span class="priority-score-badge">${score} pts</span></td>      <td><i class="fa-solid fa-circle-up" style="color:#60a5fa;"></i> <strong>${c.upvotes}</strong></td>      <td><span class="status-pill status-${c.status}">${formatStatus(c.status)}</span></td>      <td><strong>${c.assignedDepartment}</strong></td>      <td>        <select class="form-select" onchange="assignDepartment('${c.id}', this.value)" style="padding:4px 8px; font-size:0.78rem;">          <option value="">-- Assign Dept --</option>          <option value="Public Works Dept (PWD)" ${c.assignedDepartment.includes("PWD") ? "selected" : ""}>PWD Roads</option>          <option value="Electrical Department" ${c.assignedDepartment.includes("Electrical") ? "selected" : ""}>Electrical Dept</option>          <option value="Water & Sanitation Dept" ${c.assignedDepartment.includes("Water") ? "selected" : ""}>Water & Sanitation</option>          <option value="Health & Environment" ${c.assignedDepartment.includes("Health") ? "selected" : ""}>Health & Sanitation</option>        </select>      </td>    `;    tbody.appendChild(tr);  });}function assignDepartment(complaintId, deptName) {  if (!deptName) return;  const complaint = appState.complaints.find(c => c.id === complaintId);  if (complaint) {    complaint.assignedDepartment = deptName;    complaint.status = "IN_PROGRESS";    syncComplaintToFirestore(complaint);    addNotification(complaint.citizenId, complaintId, `Panchayath President assigned #${complaintId} to ${deptName}. Action in progress.`, "DEPT_ASSIGNMENT");    persistState();    renderPresidentPortal();    showToast(`Assigned #${complaintId} to ${deptName}`, "success");  }}
+function renderPresidentPortal() {
+  const selectedWard = appState.presidentWardFilter || "ALL";
+  const sortMode = appState.presidentSortMode || "NEWEST";
+
+  const sortSelect = document.getElementById("pres-sort-mode");
+  if (sortSelect) sortSelect.value = sortMode;
+  const wardSelect = document.getElementById("pres-ward-filter");
+  if (wardSelect) wardSelect.value = selectedWard;
+
+  let complaints = appState.complaints.filter(c => !c.isMerged);
+  if (selectedWard !== "ALL") {
+    complaints = complaints.filter(c => c.wardId === selectedWard);
+  }
+
+  const total = complaints.length;
+  const critical = complaints.filter(c => c.urgency === "CRITICAL" || (c.upvotes || 0) >= 15).length;
+  const inProgress = complaints.filter(c => c.status === "IN_PROGRESS").length;
+  const merged = appState.complaints.filter(c => c.isMerged).length;
+
+  const totalEl = document.getElementById("pres-total-count");
+  const critEl = document.getElementById("pres-critical-count");
+  const inProgEl = document.getElementById("pres-inprogress-count");
+  const mergedEl = document.getElementById("pres-merged-count");
+  if (totalEl) totalEl.innerText = total;
+  if (critEl) critEl.innerText = critical;
+  if (inProgEl) inProgEl.innerText = inProgress;
+  if (mergedEl) mergedEl.innerText = merged;
+
+  const tbody = document.getElementById("president-table-body");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  let sorted = [...complaints];
+  if (sortMode === "NEWEST") {
+    sorted.sort(function(a, b) {
+      var timeA = a.createdAt ? new Date(a.createdAt.replace(" ", "T")).getTime() : 0;
+      var timeB = b.createdAt ? new Date(b.createdAt.replace(" ", "T")).getTime() : 0;
+      return (isNaN(timeB) ? 0 : timeB) - (isNaN(timeA) ? 0 : timeA);
+    });
+  } else if (sortMode === "PRIORITY") {
+    sorted.sort((a, b) => parseFloat(calculatePriorityScore(b)) - parseFloat(calculatePriorityScore(a)));
+  } else if (sortMode === "UNASSIGNED") {
+    sorted.sort((a, b) => {
+      const aUn = (!a.assignedDepartment || a.assignedDepartment === "Unassigned") ? 0 : 1;
+      const bUn = (!b.assignedDepartment || b.assignedDepartment === "Unassigned") ? 0 : 1;
+      return aUn - bUn;
+    });
+  }
+
+  if (sorted.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#94a3b8;"><i class="fa-solid fa-folder-open" style="font-size:1.8rem; margin-bottom:8px; display:block;"></i>No complaints found for the selected filter.</td></tr>`;
+    return;
+  }
+
+  sorted.forEach(c => {
+    const score = calculatePriorityScore(c);
+    const tr = document.createElement("tr");
+    const dept = c.assignedDepartment || "Unassigned";
+    const isNew = c.status === "SUBMITTED" || !c.assignedDepartment || c.assignedDepartment === "Unassigned";
+
+    tr.innerHTML = `
+      <td style="font-weight:800; color:#60a5fa;">
+        ${isNew ? `<span class="acr-new-badge" style="font-size:0.65rem; padding:2px 6px; margin-right:4px;"><i class="fa-solid fa-bolt"></i> NEW</span>` : ""}#${c.id}
+      </td>
+      <td>
+        <div style="font-weight:700;">${c.title}</div>
+        <div style="font-size:0.75rem; color:#94a3b8;">${c.category} • <i class="fa-solid fa-location-dot"></i> ${c.location || ''}</div>
+      </td>
+      <td><strong>${c.wardName || c.wardId || 'Ward'}</strong></td>
+      <td><span class="priority-score-badge">${score} pts</span></td>
+      <td><i class="fa-solid fa-circle-up" style="color:#60a5fa;"></i> <strong>${c.upvotes || 0}</strong></td>
+      <td><span class="status-pill status-${c.status || 'SUBMITTED'}">${formatStatus(c.status || 'SUBMITTED')}</span></td>
+      <td><strong style="color: ${dept !== 'Unassigned' ? '#34d399' : '#f59e0b'};">${dept}</strong></td>
+      <td>
+        <select class="form-select" onchange="assignDepartment('${c.id}', this.value)" style="padding:4px 8px; font-size:0.78rem;">
+          <option value="">-- Assign Dept --</option>
+          <option value="Public Works Dept (PWD)" ${(dept && typeof dept === 'string' && dept.includes("PWD")) ? "selected" : ""}>PWD Roads</option>
+          <option value="Electrical Department" ${(dept && typeof dept === 'string' && dept.includes("Electrical")) ? "selected" : ""}>Electrical Dept</option>
+          <option value="Water & Sanitation Dept" ${(dept && typeof dept === 'string' && dept.includes("Water")) ? "selected" : ""}>Water & Sanitation</option>
+          <option value="Health & Environment" ${(dept && typeof dept === 'string' && dept.includes("Health")) ? "selected" : ""}>Health & Sanitation</option>
+        </select>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function assignDepartment(complaintId, deptName) {
+  if (!deptName) return;
+  const complaint = appState.complaints.find(c => c.id === complaintId);
+  if (complaint) {
+    complaint.assignedDepartment = deptName;
+    complaint.status = "IN_PROGRESS";
+    syncComplaintToFirestore(complaint);
+    addNotification(complaint.citizenId, complaintId, `Panchayath President assigned #${complaintId} to ${deptName}. Action in progress.`, "DEPT_ASSIGNMENT");
+    persistState();
+    renderPresidentPortal();
+    showToast(`Assigned #${complaintId} to ${deptName}`, "success");
+  }
+}
 
 // ==========================================
 // 8. AI COMPLAINT MERGING ENGINE
