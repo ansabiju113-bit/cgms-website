@@ -30,12 +30,30 @@ function updateCitizenHeader() {
 }
 
 function logoutCitizen() {
-  if (typeof window !== "undefined" && window._logoutCitizenBridge) {
+  if (typeof window !== "undefined" && typeof window._logoutCitizenBridge === "function") {
     window._logoutCitizenBridge();
     return;
   }
-  if (typeof auth !== "undefined" && auth) {
-    auth.signOut();
+  if (typeof auth !== "undefined" && auth && typeof auth.signOut === "function") {
+    auth.signOut().catch(function(e) { console.error("Firebase logout error:", e); });
+  }
+  window._loggedInCitizen = null;
+  try {
+    localStorage.removeItem("cgms_logged_in");
+    sessionStorage.removeItem("cgms_logged_in");
+  } catch(e){}
+  var loginBtn = document.getElementById("btn-citizen-login");
+  var card     = document.getElementById("citizen-profile-card");
+  if (loginBtn) {
+    loginBtn.classList.remove("hidden");
+    loginBtn.style.display = "flex";
+  }
+  if (card) {
+    card.classList.add("hidden");
+    card.style.display = "none";
+  }
+  if (typeof showToast === "function") {
+    showToast("You have been logged out.", "info");
   }
 }
 // ==========================================
@@ -220,6 +238,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fileInput.addEventListener("change", handlePhotoSelection);
   }
   on("btn-remove-photo", "click", removePhotoSelection);
+  on("btn-citizen-logout", "click", (e) => { e.preventDefault(); logoutCitizen(); });
 
   // Citizen Filters
   on("citizen-search", "input", (e) => {
