@@ -170,9 +170,15 @@
             <h2><i class="fa-solid fa-user-shield"></i> Ward Member Review & Field Inspection Portal</h2>
             <p>Review incoming ward grievances, conduct local physical assessments, approve or reject complaints, and append field inspection remarks.</p>
           </div>
-          <div class="ward-badge">
-            <span class="label">Assigned Ward:</span>
-            <span class="ward-title"><i class="fa-solid fa-location-dot"></i> Ward 1 - Green Valley</span>
+          <div class="ward-badge" style="display: flex; align-items: center; gap: 8px;">
+            <label for="ward-filter-select" class="label" style="margin: 0; white-space: nowrap;"><i class="fa-solid fa-location-dot"></i> Ward Filter:</label>
+            <select id="ward-filter-select" class="form-select" onchange="changeWardFilter(this.value)" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; font-size: 0.82rem; padding: 5px 12px; border-radius: 8px; cursor: pointer;">
+              <option value="ALL" selected>All Wards (Overview)</option>
+              <option value="W1">Ward 1 - Green Valley</option>
+              <option value="W2">Ward 2 - Lakeview</option>
+              <option value="W3">Ward 3 - Market Square</option>
+              <option value="W4">Ward 4 - Hill Top</option>
+            </select>
           </div>
         </div>
 
@@ -262,9 +268,22 @@
 
         <!-- President Priority Matrix & Department Assignment Table -->
         <div class="glass-panel mt-4">
-          <div class="panel-header flex-between">
+          <div class="panel-header flex-between" style="flex-wrap: wrap; gap: 10px;">
             <h3><i class="fa-solid fa-arrow-down-short-wide"></i> Smart Prioritized Complaints & Department Allocation</h3>
-            <span class="info-pill"><i class="fa-solid fa-bolt"></i> Ordered by Public Impact Score</span>
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+              <select id="pres-sort-mode" class="form-select" onchange="changePresSort(this.value)" style="padding: 5px 10px; font-size: 0.8rem; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; border-radius: 8px; cursor: pointer;">
+                <option value="NEWEST" selected>⚡ Newest Submissions First</option>
+                <option value="PRIORITY">🔥 Smart Priority Score</option>
+                <option value="UNASSIGNED">⏳ Pending Dept Assignment</option>
+              </select>
+              <select id="pres-ward-filter" class="form-select" onchange="changePresWard(this.value)" style="padding: 5px 10px; font-size: 0.8rem; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; border-radius: 8px; cursor: pointer;">
+                <option value="ALL" selected>All Wards</option>
+                <option value="W1">Ward 1 - Green Valley</option>
+                <option value="W2">Ward 2 - Lakeview</option>
+                <option value="W3">Ward 3 - Market Square</option>
+                <option value="W4">Ward 4 - Hill Top</option>
+              </select>
+            </div>
           </div>
           <div class="table-responsive">
             <table class="custom-table">
