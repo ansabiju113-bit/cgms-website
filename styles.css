@@ -2436,6 +2436,9 @@ body {
   white-space: nowrap;
   margin-left: 8px;
 }
+.btn-citizen-logout * {
+  pointer-events: none;
+}
 .btn-citizen-logout:hover {
   background: rgba(239, 68, 68, 0.35);
   color: #ffffff;
