@@ -809,32 +809,41 @@
       // ============================================================
       // LOGOUT
       // ============================================================
-      window._logoutCitizenBridge = function() { logoutCitizen(); };
-      function logoutCitizen() {
-        if (typeof auth !== "undefined" && auth) {
-          auth.signOut().then(function() {
-            window._loggedInCitizen = null;
-            var loginBtn = document.getElementById("btn-citizen-login");
-            var card     = document.getElementById("citizen-profile-card");
-            if (loginBtn) loginBtn.style.display = "flex";
-            if (card) card.style.display = "none";
-            if (typeof showToast === "function") showToast("You have been logged out.", "info");
-          }).catch(function(err) {
-            console.error("Sign out error:", err);
-            window._loggedInCitizen = null;
-            var loginBtn = document.getElementById("btn-citizen-login");
-            var card     = document.getElementById("citizen-profile-card");
-            if (loginBtn) loginBtn.style.display = "flex";
-            if (card) card.style.display = "none";
-          });
-        } else {
+      function handleCitizenLogout() {
+        function clearUI() {
           window._loggedInCitizen = null;
+          try {
+            localStorage.removeItem("cgms_logged_in");
+            sessionStorage.removeItem("cgms_logged_in");
+          } catch(e){}
           var loginBtn = document.getElementById("btn-citizen-login");
           var card     = document.getElementById("citizen-profile-card");
-          if (loginBtn) loginBtn.style.display = "flex";
-          if (card) card.style.display = "none";
+          if (loginBtn) {
+            loginBtn.classList.remove("hidden");
+            loginBtn.style.display = "flex";
+          }
+          if (card) {
+            card.classList.add("hidden");
+            card.style.display = "none";
+          }
+        }
+
+        if (typeof auth !== "undefined" && auth && typeof auth.signOut === "function") {
+          auth.signOut().then(function() {
+            clearUI();
+            if (typeof showToast === "function") showToast("You have been logged out successfully.", "info");
+          }).catch(function(err) {
+            console.error("Sign out error:", err);
+            clearUI();
+            if (typeof showToast === "function") showToast("You have been logged out.", "info");
+          });
+        } else {
+          clearUI();
+          if (typeof showToast === "function") showToast("You have been logged out.", "info");
         }
       }
+      window.logoutCitizen = handleCitizenLogout;
+      window._logoutCitizenBridge = handleCitizenLogout;
 
       // ============================================================
       // REALTIME AUTH STATE - updates header automatically
