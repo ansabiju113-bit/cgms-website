@@ -141,12 +141,15 @@ function initFirestoreSync() {
 
       // Sort newest first safely across all browsers
       remoteComplaints.sort(function(a, b) {
-        var timeA = a.createdAt ? new Date(a.createdAt.replace(" ", "T")).getTime() : 0;
-        var timeB = b.createdAt ? new Date(b.createdAt.replace(" ", "T")).getTime() : 0;
-        return (isNaN(timeB) ? 0 : timeB) - (isNaN(timeA) ? 0 : timeA);
+        var timeA = parseComplaintDate(a.createdAt);
+        var timeB = parseComplaintDate(b.createdAt);
+        return (timeB || 0) - (timeA || 0);
       });
 
-      appState.complaints = remoteComplaints;
+      // Merge any pending local un-synced complaints so they are never lost
+      var remoteIds = new Set(remoteComplaints.map(function(c) { return c.id; }));
+      var localPending = (appState.complaints || []).filter(function(c) { return c && c.id && !remoteIds.has(c.id); });
+      appState.complaints = localPending.concat(remoteComplaints);
       persistState();
       renderRoleView();
       if (appState.currentRole === "ADMIN") {
@@ -194,17 +197,24 @@ function changePresWard(wardId) {
 // ==========================================
 // 2. DOM INITIALIZATION & EVENT LISTENERS
 // ==========================================
-document.addEventListener("DOMContentLoaded", () => {
-  // Always require fresh login on every page visit
-  localStorage.removeItem("cgms_logged_in");
-  sessionStorage.removeItem("cgms_logged_in");
+function initApp() {
+  try {
+    localStorage.removeItem("cgms_logged_in");
+    sessionStorage.removeItem("cgms_logged_in");
+  } catch(e) {}
 
   setupEventListeners();
   renderRoleView();
   renderNotifications();
   updateCitizenHeader();
   initFirestoreSync();
-});function setupEventListeners() {
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initApp);
+} else {
+  initApp();
+}function setupEventListeners() {
   // Helper to safely bind click
   const on = (id, event, handler) => {
     const el = document.getElementById(id);
@@ -420,7 +430,7 @@ function upvoteExistingFromModal(id) {
 
 // Helper to render an individual complaint card
 function createComplaintCardHtml(c, pool) {
-  var isUpvoted = appState.upvotedIds.includes(c.id);
+  var isUpvoted = Array.isArray(appState.upvotedIds) && appState.upvotedIds.includes(c.id);
   var similarList = findSimilarComplaints(c, pool);
 
   var similarClusterHtml = "";
@@ -434,11 +444,11 @@ function createComplaintCardHtml(c, pool) {
         similarList.map(function(s) {
           return '<div class="cluster-item-row">' +
             '<div class="cir-info">' +
-              '<div><span class="cir-id">#' + s.id + '</span><span class="cir-title">' + s.title + '</span></div>' +
-              '<span class="cir-author"><i class="fa-solid fa-user-circle"></i> ' + (s.citizenName || 'Citizen') + ' • <i class="fa-solid fa-location-dot"></i> ' + s.location + '</span>' +
+              '<div><span class="cir-id">#' + s.id + '</span><span class="cir-title">' + (s.title || '') + '</span></div>' +
+              '<span class="cir-author"><i class="fa-solid fa-user-circle"></i> ' + (s.citizenName || 'Citizen') + ' • <i class="fa-solid fa-location-dot"></i> ' + (s.location || '') + '</span>' +
             '</div>' +
             '<button class="cir-upvote-btn" onclick="toggleUpvote(\'' + s.id + '\')">' +
-              '<i class="fa-solid fa-circle-up"></i> ' + s.upvotes +
+              '<i class="fa-solid fa-circle-up"></i> ' + (s.upvotes || 0) +
             '</button>' +
           '</div>';
         }).join('') +
@@ -446,28 +456,32 @@ function createComplaintCardHtml(c, pool) {
     '</div>';
   }
 
+  var fallbackImg = "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=600";
+  var photo = c.photoUrl || fallbackImg;
+  var statusStr = c.status || "SUBMITTED";
+
   return '<div class="complaint-card">' +
     '<div class="card-image-wrap">' +
-      '<img src="' + c.photoUrl + '" alt="' + c.title + '" />' +
-      '<span class="category-tag"><i class="fa-solid fa-tag"></i> ' + c.category + '</span>' +
-      '<span class="urgency-tag ' + c.urgency + '">' + c.urgency + '</span>' +
+      '<img src="' + photo + '" alt="' + (c.title || 'Grievance') + '" onerror="this.onerror=null; this.src=\'' + fallbackImg + '\';" />' +
+      '<span class="category-tag"><i class="fa-solid fa-tag"></i> ' + (c.category || 'General') + '</span>' +
+      '<span class="urgency-tag ' + (c.urgency || 'MEDIUM') + '">' + (c.urgency || 'MEDIUM') + '</span>' +
     '</div>' +
     '<div class="card-body">' +
       '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">' +
         '<span style="font-size:0.72rem; color:#64748b; font-weight:700;">#' + c.id + '</span>' +
-        '<span class="status-pill status-' + c.status + '">' + formatStatus(c.status) + '</span>' +
+        '<span class="status-pill status-' + statusStr + '">' + formatStatus(statusStr) + '</span>' +
       '</div>' +
-      '<h3 class="card-title">' + c.title + '</h3>' +
+      '<h3 class="card-title">' + (c.title || 'Untitled Grievance') + '</h3>' +
       '<div class="card-meta">' +
         '<span><i class="fa-solid fa-user-circle"></i> <strong>' + (c.citizenName || 'Citizen') + '</strong></span>' +
-        '<span><i class="fa-solid fa-location-dot"></i> ' + c.location + '</span>' +
-        '<span><i class="fa-solid fa-layer-group"></i> ' + c.wardName + '</span>' +
+        '<span><i class="fa-solid fa-location-dot"></i> ' + (c.location || '') + '</span>' +
+        '<span><i class="fa-solid fa-layer-group"></i> ' + (c.wardName || c.wardId || 'Ward') + '</span>' +
       '</div>' +
-      '<p class="card-desc">' + c.description + '</p>' +
+      '<p class="card-desc">' + (c.description || '') + '</p>' +
       similarClusterHtml +
       '<div class="card-footer">' +
         '<button class="btn-upvote ' + (isUpvoted ? 'upvoted' : '') + '" onclick="toggleUpvote(\'' + c.id + '\')">' +
-          '<i class="fa-solid fa-circle-up"></i> ' + c.upvotes + ' Upvotes' +
+          '<i class="fa-solid fa-circle-up"></i> ' + (c.upvotes || 0) + ' Upvotes' +
         '</button>' +
         '<button class="btn-track" onclick="openTrackingModal(\'' + c.id + '\')">' +
           '<i class="fa-solid fa-timeline"></i> Track Status' +
@@ -477,7 +491,6 @@ function createComplaintCardHtml(c, pool) {
   '</div>';
 }
 
-
 function renderCitizenFeed() {
   const container = document.getElementById("citizen-complaints-grid");
   if (!container) return;
@@ -486,9 +499,9 @@ function renderCitizenFeed() {
 
   /* Always sort newest first */
   list.sort(function(a, b) {
-    var timeA = a.createdAt ? new Date(a.createdAt.replace(" ", "T")).getTime() : 0;
-    var timeB = b.createdAt ? new Date(b.createdAt.replace(" ", "T")).getTime() : 0;
-    return (isNaN(timeB) ? 0 : timeB) - (isNaN(timeA) ? 0 : timeA);
+    var timeA = parseComplaintDate(a.createdAt);
+    var timeB = parseComplaintDate(b.createdAt);
+    return (timeB || 0) - (timeA || 0);
   });
 
   /* Filter by Tab */
@@ -663,17 +676,108 @@ function openSubmitModal() {
   reader.readAsDataURL(file);
 }function removePhotoSelection() {  appState.selectedPhotoUrl = null;  document.getElementById("input-photo").value = "";  document.getElementById("photo-preview-container").classList.add("hidden");}function handleComplaintSubmit(e) {
   e.preventDefault();
-  const loggedIn = getLoggedInCitizen();
+  var loggedIn = getLoggedInCitizen();
   if (!loggedIn) {
-    if (typeof openAuthModal === "function") openAuthModal("login");
-    if (typeof showToast === "function") showToast("Please login or register to file a complaint.", "error");
-    return;
+    var guestName = prompt("You are not logged in. Enter your name to post this grievance (or click Cancel to Login with an account):", "Resident Citizen");
+    if (!guestName || !guestName.trim()) {
+      if (typeof openAuthModal === "function") openAuthModal("login");
+      if (typeof showToast === "function") showToast("Please login or provide your name to post a grievance.", "info");
+      return;
+    }
+    loggedIn = {
+      id: "GUEST-" + Date.now(),
+      username: guestName.trim(),
+      email: "citizen@panchayath.gov",
+      initials: guestName.trim().substring(0, 2).toUpperCase()
+    };
   }
-  const title = document.getElementById("input-title").value.trim();  const category = document.getElementById("input-category").value;  const wardId = document.getElementById("input-ward").value;  const location = document.getElementById("input-location").value.trim();  const urgency = document.getElementById("input-urgency").value;  const description = document.getElementById("input-description").value.trim();  const wardNames = { "W1": "Ward 1 - Green Valley", "W2": "Ward 2 - Lakeview", "W3": "Ward 3 - Market Square", "W4": "Ward 4 - Hill Top" };    /* Sample Fallback photos based on category */  const fallbackPhotos = {    "Road Damage": "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=600",    "Streetlight": "https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=600",    "Water Supply": "https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?w=600",    "Garbage": "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=600"  };  const maxNum = appState.complaints.reduce(function(max, c) {
+
+  const title = (document.getElementById("input-title")?.value || "").trim();
+  const category = document.getElementById("input-category")?.value || "Others";
+  const wardId = document.getElementById("input-ward")?.value || "W1";
+  const location = (document.getElementById("input-location")?.value || "").trim();
+  const urgency = document.getElementById("input-urgency")?.value || "MEDIUM";
+  const description = (document.getElementById("input-description")?.value || "").trim();
+  const wardNames = { "W1": "Ward 1 - Green Valley", "W2": "Ward 2 - Lakeview", "W3": "Ward 3 - Market Square", "W4": "Ward 4 - Hill Top" };
+  
+  const fallbackPhotos = {
+    "Road Damage": "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=600",
+    "Streetlight": "https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=600",
+    "Water Supply": "https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?w=600",
+    "Garbage": "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?w=600"
+  };
+
+  const maxNum = (appState.complaints || []).reduce(function(max, c) {
     var m = c.id && c.id.match(/^CMP-(\d+)$/);
     return m ? Math.max(max, parseInt(m[1], 10)) : max;
   }, 1000);
-  const newId = `CMP-${maxNum + 1}`;  const newComplaint = {    id: newId,    title,    category,    description,    location,    lat: 10.5230 + (Math.random() * 0.01),    lng: 76.2140 + (Math.random() * 0.01),    wardId,    wardName: wardNames[wardId] || "Ward 1",    citizenId: loggedIn.id,    citizenName: loggedIn.username,    citizenEmail: loggedIn.email,    urgency,    status: "SUBMITTED",    upvotes: 1,    assignedDepartment: "Unassigned",    wardRemarks: "Pending Ward Member field assessment. Published live on Public Feed.",      photoUrl: appState.selectedPhotoUrl || fallbackPhotos[category] || "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=600",    createdAt: new Date().toISOString().replace('T', ' ').substring(0, 16),    isMerged: false,    childIds: []  };  appState.complaints.unshift(newComplaint);  appState.upvotedIds.push(newId);  syncComplaintToFirestore(newComplaint);  /* Automatically ensure citizen is on Public Feed to see their posted grievance immediately */  appState.currentRole = "CITIZEN";  appState.citizenFilterTab = "PUBLIC";  appState.citizenFilterCategory = "ALL";  appState.searchQuery = "";  var tabSel = document.getElementById("citizen-tab-filter");  if (tabSel) tabSel.value = "PUBLIC";  var catSel = document.getElementById("citizen-category-filter");  if (catSel) catSel.value = "ALL";  var sInp = document.getElementById("search-input");  if (sInp) sInp.value = "";  /* Notify the citizen */  addNotification(loggedIn.id, newId, `Grievance #${newId} is live on the home page! Public community upvoting active.`, "STATUS_CHANGE");  /* Notify admin (U401) */  addNotification("U401", newId, `📢 Grievance #${newId} posted by ${loggedIn.username} (${loggedIn.email}): "${title}" (${category} • ${urgency})`, "NEW_COMPLAINT");  persistState();  closeAllModals();  renderRoleView();  showToast(`Grievance #${newId} posted! Live on homepage feed.`, "success");    /* Reset Form */  document.getElementById("form-submit-complaint").reset();  removePhotoSelection();}
+  
+  const newId = `CMP-${maxNum + 1}`;
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  const hh = String(now.getHours()).padStart(2, '0');
+  const min = String(now.getMinutes()).padStart(2, '0');
+  const dateStr = `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+
+  const newComplaint = {
+    id: newId,
+    title: title || "Grievance Report",
+    category: category,
+    description: description || "No detailed description provided.",
+    location: location || "Local Panchayath Area",
+    lat: 10.5230 + (Math.random() * 0.01),
+    lng: 76.2140 + (Math.random() * 0.01),
+    wardId: wardId,
+    wardName: wardNames[wardId] || "Ward 1 - Green Valley",
+    citizenId: loggedIn.id,
+    citizenName: loggedIn.username,
+    citizenEmail: loggedIn.email,
+    urgency: urgency,
+    status: "SUBMITTED",
+    upvotes: 1,
+    assignedDepartment: "Unassigned",
+    wardRemarks: "Pending Ward Member field assessment. Published live on Public Feed.",
+    photoUrl: appState.selectedPhotoUrl || fallbackPhotos[category] || fallbackPhotos["Road Damage"],
+    createdAt: dateStr,
+    isMerged: false,
+    childIds: []
+  };
+
+  appState.complaints.unshift(newComplaint);
+  if (!appState.upvotedIds.includes(newId)) {
+    appState.upvotedIds.push(newId);
+  }
+
+  // Push to Cloud Firestore
+  syncComplaintToFirestore(newComplaint);
+
+  /* Ensure user is viewing Public Feed so grievance shows up immediately */
+  appState.currentRole = "CITIZEN";
+  appState.citizenFilterTab = "PUBLIC";
+  appState.citizenFilterCategory = "ALL";
+  appState.searchQuery = "";
+
+  var tabSel = document.getElementById("citizen-tab-filter");
+  if (tabSel) tabSel.value = "PUBLIC";
+  var catSel = document.getElementById("citizen-category-filter");
+  if (catSel) catSel.value = "ALL";
+  var sInp = document.getElementById("citizen-search");
+  if (sInp) sInp.value = "";
+
+  addNotification(loggedIn.id, newId, `Grievance #${newId} is live on the home page! Public community upvoting active.`, "STATUS_CHANGE");
+  addNotification("U401", newId, `📢 Grievance #${newId} posted by ${loggedIn.username}: "${newComplaint.title}" (${category} • ${urgency})`, "NEW_COMPLAINT");
+
+  persistState();
+  closeAllModals();
+  renderRoleView();
+  showToast(`Grievance #${newId} posted! Live on homepage feed.`, "success");
+
+  const formEl = document.getElementById("form-submit-complaint");
+  if (formEl) formEl.reset();
+  removePhotoSelection();
+}
 
 // ==========================================
 // 6. WARD MEMBER PORTAL LOGIC
@@ -1104,4 +1208,18 @@ function addNotification(userId, complaintId, message, type) {  const newNotif =
     m.classList.add("hidden");
     if (m.id !== "auth-overlay") m.style.display = "none";
   });
-}function formatStatus(status) {  return status.replace(/_/g, ' ');}function showToast(message, type = "info") {  const container = document.getElementById("toast-container");  const toast = document.createElement("div");  toast.className = `toast toast-${type}`;  toast.innerHTML = `<i class="fa-solid fa-circle-info"></i> ${message}`;  container.appendChild(toast);  setTimeout(() => {    toast.remove();  }, 4000);}
+}function parseComplaintDate(str) {
+  if (!str) return 0;
+  if (typeof str === "number") return str;
+  var m = String(str).match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+  if (m) {
+    return new Date(parseInt(m[1],10), parseInt(m[2],10)-1, parseInt(m[3],10), parseInt(m[4],10), parseInt(m[5],10)).getTime();
+  }
+  var d = new Date(str).getTime();
+  return isNaN(d) ? 0 : d;
+}
+
+function formatStatus(status) {
+  if (!status) return "SUBMITTED";
+  return String(status).replace(/_/g, ' ');
+}function showToast(message, type = "info") {  const container = document.getElementById("toast-container");  const toast = document.createElement("div");  toast.className = `toast toast-${type}`;  toast.innerHTML = `<i class="fa-solid fa-circle-info"></i> ${message}`;  container.appendChild(toast);  setTimeout(() => {    toast.remove();  }, 4000);}
